@@ -13,13 +13,20 @@ public:
 
 	void initialize(GLFWwindow* window);
 
-	void draw() const;
+	void draw();
 
 	void free();
 
 private:
+	void drawSettingsPanel();
+
+	void drawViewer3DPanel();
+
+	void setupDockspace();
 
 
+private:
+	bool _dockspaceOpen = true;
 };
 
 
