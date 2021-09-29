@@ -1,9 +1,13 @@
 ﻿#include "Editor.hpp"
 
-
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+
+#include "GLRenderer/Test.hpp"
+
+#include <string>
+
 
 namespace oryon
 {
@@ -56,6 +60,14 @@ void Editor::drawSettingsPanel()
     {
         static float a = 1.0f;
         ImGui::SliderFloat("Float", &a, 0.0, 5.0);
+
+        static std::string str = "";
+        if (ImGui::Button("GLRenderer"))
+        {
+            str = test::function12();
+        }
+
+        ImGui::Text(str.c_str());
     }
     ImGui::End(); // Settings
 }

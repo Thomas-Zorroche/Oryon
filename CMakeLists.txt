@@ -35,7 +35,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # ////////////////////////// LIBRAIRIES ///////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////////
 
-link_directories(${CMAKE_SOURCE_DIR}/lib)
+link_directories(${CMAKE_SOURCE_DIR}/lib ${CMAKE_GLRENDERER_DIR}/install)
 
 # find the required packages
 if(UNIX)
@@ -59,7 +59,7 @@ else()
 endif(WIN32)
 
 add_library(GLAD "thirdparty/glad.c")
-set(LIBS ${LIBS} GLAD)
+set(LIBS ${LIBS} GLAD GLRenderer)
 
 macro(makeLink src dest target)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}  DEPENDS  ${dest} COMMENT "mklink ${src} -> ${dest}")
@@ -78,7 +78,8 @@ configure_file(src/helpers/RootDir.h src/helpers/RootDir.h)
 include_directories(
   ${CMAKE_BINARY_DIR}/src
   ${CMAKE_SOURCE_DIR}/src
-  ${CMAKE_SOURCE_DIR}/include)
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_GLRENDERER_DIR}/src/include)
 
 # Grab all the source files
 file(GLOB_RECURSE MY_SOURCES ${CMAKE_SOURCE_DIR}/src/*)
@@ -94,5 +95,3 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 # Recreate the folder architecture inside the Visual Studio solution (might work for other IDEs as well)
 VS_RegisterFiles("${MY_SOURCES}")
-
-

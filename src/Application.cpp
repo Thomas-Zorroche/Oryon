@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+
 namespace oryon
 {
 
@@ -18,6 +19,8 @@ void Application::run()
 	glEnable(GL_DEPTH_TEST);
 
 	_editor->initialize(_window->GetNativeWindow());
+
+
 
 	while (!glfwWindowShouldClose(_window->GetNativeWindow()))
 	{
