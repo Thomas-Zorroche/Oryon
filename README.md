@@ -6,7 +6,7 @@ First clone GLRenderer.
 ```bash
 git clone https://github.com/Thomas-Zorroche/GLRenderer.git
 ```
-Then build GLRenderer and make sure there are .dll and .lib in install folder
+Then build GLRenderer and make sure there is the .lib file in install folder
 ```bash
 cd GLRenderer
 mkdir build && cd build
