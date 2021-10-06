@@ -5,12 +5,18 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "GLRenderer/Test.hpp"
+#include "GLRenderer/Renderer.hpp"
 
 #include <string>
 
 
 namespace oryon
 {
+
+Editor::Editor()
+{
+
+}
 
 void Editor::initialize(GLFWwindow * window)
 {
@@ -21,10 +27,20 @@ void Editor::initialize(GLFWwindow * window)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init((char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
 
+    _framebuffer = std::make_unique<Framebuffer>();
+    glrenderer::Renderer::init();
 }
 
 void Editor::draw()
 {
+    // Draw 3D Scene here
+    _framebuffer->bind(_viewportWidth, _viewportHeight);
+
+    glrenderer::Renderer::clear();
+
+    _framebuffer->unbind();
+
+
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -58,8 +74,12 @@ void Editor::drawSettingsPanel()
 {
     if (ImGui::Begin("Settings"))
     {
-        static float a = 1.0f;
-        ImGui::SliderFloat("Float", &a, 0.0, 5.0);
+        static float color[3] = { 0.0f , 1.0f, 0.0f };
+
+        if (ImGui::ColorEdit3("Color", &color[0]))
+        {
+            glrenderer::Renderer::setClearColor(glm::vec4(color[0], color[1], color[2], 1.0f));
+        }
 
         static std::string str = "";
         if (ImGui::Button("GLRenderer"))
@@ -77,16 +97,14 @@ void Editor::drawViewer3DPanel()
     if (ImGui::Begin("Viewer 3D"))
     {
         ImVec2 wsize = ImGui::GetContentRegionAvail();
-        //if (_viewportWidth != wsize.x || _viewportHeight != wsize.y)
-        //{
-        //    _viewportWidth = wsize.x;
-        //    _viewportHeight = wsize.y;
-        //    _fbo.resize(_viewportWidth, _viewportHeight);
-        //}
-        //Renderer::Get().ComputeProjectionMatrix();
+        if (_viewportWidth != wsize.x || _viewportHeight != wsize.y)
+        {
+            _viewportWidth = wsize.x;
+            _viewportHeight = wsize.y;
+            _framebuffer->resize(_viewportWidth, _viewportHeight);
+        }
 
-        //ImGui::Image((ImTextureID)_fbo.getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
-        ImGui::Image(0, wsize, ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
     }
     ImGui::End();
 }
@@ -149,6 +167,9 @@ void Editor::free()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+
+    glrenderer::Renderer::free();
+    _framebuffer->free();
 }
 
 }

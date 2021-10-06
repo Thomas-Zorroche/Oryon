@@ -20,16 +20,10 @@ void Application::run()
 
 	_editor->initialize(_window->GetNativeWindow());
 
-
-
 	while (!glfwWindowShouldClose(_window->GetNativeWindow()))
 	{
 		float currentFrame = glfwGetTime();
 
-		glClearColor(0, 0, 0, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Draw
 		_editor->draw();
 
 		/* Swap front and back buffers */
@@ -38,6 +32,7 @@ void Application::run()
 		/* Poll for and process events */
 		glfwPollEvents();
 	}
+
 
 	_editor->free();
 

@@ -3,13 +3,16 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "Framebuffer.hpp"
+#include <memory>
+
 namespace oryon
 {
 
 class Editor
 {
 public:
-	Editor() = default;
+	Editor();
 
 	void initialize(GLFWwindow* window);
 
@@ -27,6 +30,11 @@ private:
 
 private:
 	bool _dockspaceOpen = true;
+	
+	std::unique_ptr<Framebuffer> _framebuffer = nullptr;
+
+	float _viewportWidth = 500.0f;
+	float _viewportHeight = 300.0f;
 };
 
 

@@ -79,7 +79,7 @@ include_directories(
   ${CMAKE_BINARY_DIR}/src
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_GLRENDERER_DIR}/src/include)
+  ${CMAKE_GLRENDERER_DIR}/src)
 
 # Grab all the source files
 file(GLOB_RECURSE MY_SOURCES ${CMAKE_SOURCE_DIR}/src/*)
