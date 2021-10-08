@@ -29,15 +29,13 @@ public:
 
 private:
 	void drawSettingsPanel();
-
 	void drawViewer3DPanel();
+	void drawWorldOutliner();
+	void drawMeshPanel();
 
 	void renderFramebuffer();
 
 	void setupDockspace();
-
-	void showImGuiDemoWindow();
-
 
 private:
 	bool _dockspaceOpen = true;

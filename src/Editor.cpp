@@ -17,7 +17,8 @@
 
 #include "glm/gtc/matrix_transform.hpp"
 
-
+#include "imgui/IconsMaterialDesignIcons.h"
+#include <imgui/MaterialDesign.inl>
 
 namespace oryon
 {
@@ -32,9 +33,23 @@ void Editor::initialize(GLFWwindow * window)
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init((char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
+
+    // Icons Font
+    static const ImWchar icons_ranges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphOffset.y = 1.0f;
+    icons_config.OversampleH = icons_config.OversampleV = 1;
+    icons_config.PixelSnapH = true;
+    icons_config.SizePixels = 18.f;
+    // Setup fonts                                                                                    // Font Indices
+    io.FontDefault = io.Fonts->AddFontFromFileTTF("res/fonts/OpenSans/OpenSans-Regular.ttf", 16.0f);  // 1
+    io.Fonts->AddFontFromMemoryCompressedTTF(MaterialDesign_compressed_data, MaterialDesign_compressed_size, 16, &icons_config, icons_ranges);
 
     // Initialize Renderer Data
     glrenderer::Renderer::init();
@@ -71,6 +86,7 @@ void Editor::initialize(GLFWwindow * window)
     //};
     //std::vector<uint32_t> indices = { 0, 1, 2 };
     ////_mesh = std::make_shared<glrenderer::Mesh>(vertices, indices);
+
     _mesh = glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan);
 }
 
@@ -83,13 +99,25 @@ void Editor::draw()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-    {
-        showImGuiDemoWindow();
 
-        setupDockspace();
-        drawSettingsPanel();
-        drawViewer3DPanel();
+    static bool demo = true;
+    if (demo)
+    {
+        ImGui::ShowDemoWindow(&demo);
+        glrenderer::Renderer::clear();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        return;
     }
+
+    setupDockspace();
+
+    drawSettingsPanel();
+    drawMeshPanel();
+    drawWorldOutliner();
+    drawViewer3DPanel();
+
     ImGui::End(); // Main Window
 
     renderFramebuffer();
@@ -131,6 +159,46 @@ void Editor::drawSettingsPanel()
         }
 
         ImGui::Text(str.c_str());
+    }
+    ImGui::End(); // Settings
+}
+
+void Editor::drawMeshPanel()
+{
+    if (ImGui::Begin("Mesh"))
+    {
+        static char label[64] = "Cube";
+        ImGui::InputText("Label", label, IM_ARRAYSIZE(label));
+
+        if (ImGui::TreeNode("Transform"))
+        {
+            static float location[3] = { 1.0f, 1.0f, 1.0f };
+            static float rotation[3] = { 1.0f, 1.0f, 1.0f };
+            static float scale[3] = { 1.0f, 1.0f, 1.0f };
+
+            ImGui::DragFloat3("Location", location);
+            ImGui::DragFloat3("Rotation", rotation);
+            ImGui::DragFloat3("Scale", scale);
+
+            ImGui::TreePop();
+            ImGui::Separator();
+        }
+    }
+    ImGui::End(); // Settings
+}
+
+void Editor::drawWorldOutliner()
+{
+    if (ImGui::Begin("World Outliner"))
+    {
+        static int selected = -1;
+
+        if (ImGui::Selectable(ICON_MDI_CUBE "Plan", selected == 0))
+            selected = 0;
+        if (ImGui::Selectable(ICON_MDI_CUBE "Plan 001", selected == 1))
+            selected = 1;
+        if (ImGui::Selectable(ICON_MDI_CUBE "Plan 002", selected == 2))
+            selected = 2;
     }
     ImGui::End(); // Settings
 }
@@ -217,19 +285,5 @@ void Editor::free()
     glrenderer::Renderer::free();
     _framebuffer->free();
 }
-
-void Editor::showImGuiDemoWindow()
-{
-    static bool demo = false;
-    if (demo)
-    {
-        ImGui::ShowDemoWindow(&demo);
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        return;
-    }
-}
-
-
 
 }
