@@ -64,14 +64,14 @@ void Editor::initialize(GLFWwindow * window)
         //_vertexArray->setIndexBuffer(indexBuffer);
     }
 
-    std::vector<float> vertices = {
-    -0.5f, -0.5f, -3.0f,
-     0.5f, -0.5f, -3.0f,
-     0.0f,  0.5f, -3.0f
-    };
-    std::vector<uint32_t> indices = { 0, 1, 2 };
-    _mesh = std::make_shared<glrenderer::Mesh>(vertices, indices);
-    //glrenderer::Mesh cube = glrenderer::Mesh::CreateMesh("Cube");
+    //std::vector<float> vertices = {
+    //-0.5f, -0.5f, -3.0f,
+    // 0.5f, -0.5f, -3.0f,
+    // 0.0f,  0.5f, -3.0f
+    //};
+    //std::vector<uint32_t> indices = { 0, 1, 2 };
+    ////_mesh = std::make_shared<glrenderer::Mesh>(vertices, indices);
+    _mesh = glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan);
 }
 
 void Editor::draw()
