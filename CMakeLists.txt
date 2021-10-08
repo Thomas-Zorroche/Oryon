@@ -83,9 +83,10 @@ include_directories(
 
 # Grab all the source files
 file(GLOB_RECURSE MY_SOURCES ${CMAKE_SOURCE_DIR}/src/*)
+file(GLOB_RECURSE MY_SHADERS ${CMAKE_SOURCE_DIR}/res/shaders/*)
 
 # Create target executable
-add_executable(${PROJECT_NAME} ${MY_SOURCES})
+add_executable(${PROJECT_NAME} ${MY_SOURCES} ${MY_SHADERS})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD ${CXX_STANDARD})
 
@@ -95,3 +96,8 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 # Recreate the folder architecture inside the Visual Studio solution (might work for other IDEs as well)
 VS_RegisterFiles("${MY_SOURCES}")
+VS_RegisterFiles("${MY_SHADERS}")
+
+# copy shader files to build directory
+file(COPY ${CMAKE_SOURCE_DIR}/res
+  DESTINATION ${CMAKE_BINARY_DIR})

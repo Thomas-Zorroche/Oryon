@@ -4,8 +4,12 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-#include "GLRenderer/Test.hpp"
 #include "GLRenderer/Renderer.hpp"
+
+// TMP
+#include "GLRenderer/Test.hpp"
+#include "GLRenderer/VertexBuffer.hpp"
+#include "GLRenderer/IndexBuffer.hpp"
 
 #include <string>
 
@@ -28,18 +32,41 @@ void Editor::initialize(GLFWwindow * window)
     ImGui_ImplOpenGL3_Init((char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
 
     _framebuffer = std::make_unique<Framebuffer>();
+
     glrenderer::Renderer::init();
+
+    _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
+
+    _vertexArray = std::make_shared<glrenderer::VertexArray>();
+
+    float vertices[3 * 3] = {
+        -0.5f, -0.5f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+         0.0f,  0.5f, 0.0f
+    };
+    const auto& vertexBuffer = std::make_shared<glrenderer::VertexBuffer>(vertices, sizeof(vertices));
+    glrenderer::BufferLayout layout = {
+        {glrenderer::BufferAttribute()}
+    };
+    vertexBuffer->setLayout(layout);
+    _vertexArray->setVertexBuffer(vertexBuffer);
+
+    uint32_t indices[3] = { 0, 1, 2 };
+    auto indexBuffer = std::make_shared<glrenderer::IndexBuffer>(indices, 3);
+    _vertexArray->setIndexBuffer(indexBuffer);
 }
 
 void Editor::draw()
 {
-    // Draw 3D Scene here
     _framebuffer->bind(_viewportWidth, _viewportHeight);
+    // Draw 3D Scene here
+    {
+        glrenderer::Renderer::clear();
 
-    glrenderer::Renderer::clear();
-
+        _shader->Bind();
+        glrenderer::Renderer::draw(_vertexArray);
+    }
     _framebuffer->unbind();
-
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
