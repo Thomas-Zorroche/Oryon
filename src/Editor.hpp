@@ -1,7 +1,9 @@
-﻿#pragma once
+#pragma once
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
 
 #include "Framebuffer.hpp"
 #include <memory>
@@ -30,7 +32,11 @@ private:
 
 	void drawViewer3DPanel();
 
+	void renderFramebuffer();
+
 	void setupDockspace();
+
+	void showImGuiDemoWindow();
 
 
 private:
@@ -44,6 +50,7 @@ private:
 	// TEMP
 	std::shared_ptr<glrenderer::VertexArray> _vertexArray = nullptr;
 	std::shared_ptr<glrenderer::Shader> _shader = nullptr;
+	glm::mat4 _projection;
 
 };
 

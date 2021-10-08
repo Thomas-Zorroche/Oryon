@@ -1,5 +1,7 @@
 ﻿#include "Editor.hpp"
 
+#include "GLFW/glfw3.h"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
@@ -12,6 +14,10 @@
 #include "GLRenderer/IndexBuffer.hpp"
 
 #include <string>
+#include <iostream>
+
+#include "glm/gtc/matrix_transform.hpp"
+
 
 
 namespace oryon
@@ -40,9 +46,9 @@ void Editor::initialize(GLFWwindow * window)
     _vertexArray = std::make_shared<glrenderer::VertexArray>();
 
     float vertices[3 * 3] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
+        -0.5f, -0.5f, -3.0f,
+         0.5f, -0.5f, -3.0f,
+         0.0f,  0.5f, -3.0f
     };
     const auto& vertexBuffer = std::make_shared<glrenderer::VertexBuffer>(vertices, sizeof(vertices));
     glrenderer::BufferLayout layout = {
@@ -54,20 +60,13 @@ void Editor::initialize(GLFWwindow * window)
     uint32_t indices[3] = { 0, 1, 2 };
     auto indexBuffer = std::make_shared<glrenderer::IndexBuffer>(indices, 3);
     _vertexArray->setIndexBuffer(indexBuffer);
+
+    float ratio = _viewportWidth / _viewportHeight;
+    _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
 }
 
 void Editor::draw()
 {
-    _framebuffer->bind(_viewportWidth, _viewportHeight);
-    // Draw 3D Scene here
-    {
-        glrenderer::Renderer::clear();
-
-        _shader->Bind();
-        glrenderer::Renderer::draw(_vertexArray);
-    }
-    _framebuffer->unbind();
-
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
@@ -75,26 +74,34 @@ void Editor::draw()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
-
-    static bool demo = false;
-    if (demo)
     {
-        ImGui::ShowDemoWindow(&demo);
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        return;
+        showImGuiDemoWindow();
+
+        setupDockspace();
+        drawSettingsPanel();
+        drawViewer3DPanel();
     }
-
-    setupDockspace();
-
-    // Draw ui panels
-    drawSettingsPanel();
-    drawViewer3DPanel();
-
     ImGui::End(); // Main Window
+
+    renderFramebuffer();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Editor::renderFramebuffer()
+{
+    _framebuffer->bind(_viewportWidth, _viewportHeight);
+    // Draw 3D Scene here
+    {
+        glrenderer::Renderer::clear();
+
+        _shader->Bind();
+        _shader->SetUniformMatrix4fv("uProjectionMatrix", _projection);
+
+        glrenderer::Renderer::draw(_vertexArray);
+    }
+    _framebuffer->unbind();
 }
 
 void Editor::drawSettingsPanel()
@@ -129,6 +136,9 @@ void Editor::drawViewer3DPanel()
             _viewportWidth = wsize.x;
             _viewportHeight = wsize.y;
             _framebuffer->resize(_viewportWidth, _viewportHeight);
+
+            float ratio = _viewportWidth / _viewportHeight;
+            _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
         }
 
         ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
@@ -198,5 +208,19 @@ void Editor::free()
     glrenderer::Renderer::free();
     _framebuffer->free();
 }
+
+void Editor::showImGuiDemoWindow()
+{
+    static bool demo = false;
+    if (demo)
+    {
+        ImGui::ShowDemoWindow(&demo);
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        return;
+    }
+}
+
+
 
 }

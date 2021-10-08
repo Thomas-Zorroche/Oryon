@@ -11,11 +11,8 @@ class Window
 public:
     Window(int argc, char** argv);
 
-    void SetWidth(float width) { _width = width; }
-    void SetHeight(float height) { height = _height; }
-
-    float Width() const { return _width; }
-    float Height() const { return _height; }
+    unsigned int Width() const { return _windowData.width; }
+    unsigned int Height() const { return _windowData.height; }
 
     GLFWwindow* GetNativeWindow() { return _glfw_Window; }
 
@@ -28,8 +25,14 @@ private:
 private:
     GLFWwindow* _glfw_Window = nullptr;
 
-    float _width = 1920.0f;
-    float _height = 1080.0f;
+    struct WindowData
+    {
+        unsigned int width = 1920;
+        unsigned int height = 1080;
+    };
+
+    WindowData _windowData;
+
 };
 
 }   // ns editor

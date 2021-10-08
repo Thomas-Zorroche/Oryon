@@ -18,7 +18,7 @@ int Window::Init()
         return 0;
 
     /* Create a windowed mode window and its OpenGL context */
-    _glfw_Window = glfwCreateWindow((int)_width, (int)_height, "Oryon", NULL, NULL);
+    _glfw_Window = glfwCreateWindow(_windowData.width, _windowData.height, "Oryon", NULL, NULL);
     if (!_glfw_Window)
     {
         std::cerr << "GLFW: Failed to create window" << std::endl;
@@ -57,13 +57,13 @@ void Window::InitScreenSize(char* size)
 {
     if (strcmp(size, "-hd") == 0)
     {
-        _width = 1280.0f;
-        _height = 720.0f;
+        _windowData.width = 1280;
+        _windowData.height = 720;
     }
     else if (strcmp(size, "-fhd") == 0)
     {
-        _width = 1920.0f;
-        _height = 1080.0f;
+        _windowData.width = 1920;
+        _windowData.height = 1080;
     }
 }
 

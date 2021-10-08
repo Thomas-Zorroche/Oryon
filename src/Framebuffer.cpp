@@ -9,9 +9,7 @@ namespace oryon
 
     Framebuffer::Framebuffer(float width, float height)
     {
-        _id = 4;
         glGenFramebuffers(1, &_id);
-        int a = 3;
         glBindFramebuffer(GL_FRAMEBUFFER, _id);
         {
             // Create Texture
