@@ -7,11 +7,10 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #include "GLRenderer/Renderer.hpp"
-
 // TMP
 #include "GLRenderer/Test.hpp"
-#include "GLRenderer/VertexBuffer.hpp"
-#include "GLRenderer/IndexBuffer.hpp"
+//#include "GLRenderer/VertexBuffer.hpp"
+//#include "GLRenderer/IndexBuffer.hpp"
 
 #include <string>
 #include <iostream>
@@ -37,32 +36,42 @@ void Editor::initialize(GLFWwindow * window)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init((char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
 
-    _framebuffer = std::make_unique<Framebuffer>();
-
+    // Initialize Renderer Data
     glrenderer::Renderer::init();
-
-    _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
-
-    _vertexArray = std::make_shared<glrenderer::VertexArray>();
-
-    float vertices[3 * 3] = {
-        -0.5f, -0.5f, -3.0f,
-         0.5f, -0.5f, -3.0f,
-         0.0f,  0.5f, -3.0f
-    };
-    const auto& vertexBuffer = std::make_shared<glrenderer::VertexBuffer>(vertices, sizeof(vertices));
-    glrenderer::BufferLayout layout = {
-        {glrenderer::BufferAttribute()}
-    };
-    vertexBuffer->setLayout(layout);
-    _vertexArray->setVertexBuffer(vertexBuffer);
-
-    uint32_t indices[3] = { 0, 1, 2 };
-    auto indexBuffer = std::make_shared<glrenderer::IndexBuffer>(indices, 3);
-    _vertexArray->setIndexBuffer(indexBuffer);
-
+    _framebuffer = std::make_unique<Framebuffer>();
     float ratio = _viewportWidth / _viewportHeight;
     _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
+
+    // TEMP -- Triangle Data
+    {
+        _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
+        //_vertexArray = std::make_shared<glrenderer::VertexArray>();
+
+        //std::vector<float> vertices = {
+        //    -0.5f, -0.5f, -3.0f,
+        //     0.5f, -0.5f, -3.0f,
+        //     0.0f,  0.5f, -3.0f
+        //};
+        //const auto& vertexBuffer = std::make_shared<glrenderer::VertexBuffer>(vertices);
+        //glrenderer::BufferLayout layout = {
+        //    {glrenderer::BufferAttribute()}
+        //};
+        //vertexBuffer->setLayout(layout);
+        //_vertexArray->setVertexBuffer(vertexBuffer);
+
+        //std::vector<uint32_t> indices = { 0, 1, 2 };
+        //auto indexBuffer = std::make_shared<glrenderer::IndexBuffer>(indices, 3);
+        //_vertexArray->setIndexBuffer(indexBuffer);
+    }
+
+    std::vector<float> vertices = {
+    -0.5f, -0.5f, -3.0f,
+     0.5f, -0.5f, -3.0f,
+     0.0f,  0.5f, -3.0f
+    };
+    std::vector<uint32_t> indices = { 0, 1, 2 };
+    _mesh = std::make_shared<glrenderer::Mesh>(vertices, indices);
+    //glrenderer::Mesh cube = glrenderer::Mesh::CreateMesh("Cube");
 }
 
 void Editor::draw()
@@ -99,7 +108,7 @@ void Editor::renderFramebuffer()
         _shader->Bind();
         _shader->SetUniformMatrix4fv("uProjectionMatrix", _projection);
 
-        glrenderer::Renderer::draw(_vertexArray);
+        glrenderer::Renderer::draw(_mesh->getVertexArray());
     }
     _framebuffer->unbind();
 }
