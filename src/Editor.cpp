@@ -6,11 +6,10 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+
 #include "GLRenderer/Renderer.hpp"
-// TMP
-#include "GLRenderer/Test.hpp"
-//#include "GLRenderer/VertexBuffer.hpp"
-//#include "GLRenderer/IndexBuffer.hpp"
+#include "GLRenderer/Scene/Scene.hpp"
+#include "GLRenderer/Scene/Component.hpp"
 
 #include <string>
 #include <iostream>
@@ -57,37 +56,15 @@ void Editor::initialize(GLFWwindow * window)
     float ratio = _viewportWidth / _viewportHeight;
     _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
 
-    // TEMP -- Triangle Data
-    {
-        _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
-        //_vertexArray = std::make_shared<glrenderer::VertexArray>();
 
-        //std::vector<float> vertices = {
-        //    -0.5f, -0.5f, -3.0f,
-        //     0.5f, -0.5f, -3.0f,
-        //     0.0f,  0.5f, -3.0f
-        //};
-        //const auto& vertexBuffer = std::make_shared<glrenderer::VertexBuffer>(vertices);
-        //glrenderer::BufferLayout layout = {
-        //    {glrenderer::BufferAttribute()}
-        //};
-        //vertexBuffer->setLayout(layout);
-        //_vertexArray->setVertexBuffer(vertexBuffer);
+    _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
 
-        //std::vector<uint32_t> indices = { 0, 1, 2 };
-        //auto indexBuffer = std::make_shared<glrenderer::IndexBuffer>(indices, 3);
-        //_vertexArray->setIndexBuffer(indexBuffer);
-    }
+    auto redPlan = _scene->createEntity("Red Plan");
+    redPlan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
 
-    //std::vector<float> vertices = {
-    //-0.5f, -0.5f, -3.0f,
-    // 0.5f, -0.5f, -3.0f,
-    // 0.0f,  0.5f, -3.0f
-    //};
-    //std::vector<uint32_t> indices = { 0, 1, 2 };
-    ////_mesh = std::make_shared<glrenderer::Mesh>(vertices, indices);
+    auto& scale = redPlan.getComponent<glrenderer::TransformComponent>().scale;
+    scale = glm::vec3(0.2f);
 
-    _mesh = glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan);
 }
 
 void Editor::draw()
@@ -100,7 +77,7 @@ void Editor::draw()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    static bool demo = true;
+    static bool demo = false;
     if (demo)
     {
         ImGui::ShowDemoWindow(&demo);
@@ -136,7 +113,8 @@ void Editor::renderFramebuffer()
         _shader->Bind();
         _shader->SetUniformMatrix4fv("uProjectionMatrix", _projection);
 
-        glrenderer::Renderer::draw(_mesh->getVertexArray());
+        // Render each entity that have a MeshComponent and a TransfromComponent
+        _scene->onUpdate(_shader);
     }
     _framebuffer->unbind();
 }
@@ -151,14 +129,6 @@ void Editor::drawSettingsPanel()
         {
             glrenderer::Renderer::setClearColor(glm::vec4(color[0], color[1], color[2], 1.0f));
         }
-
-        static std::string str = "";
-        if (ImGui::Button("GLRenderer"))
-        {
-            str = test::function12();
-        }
-
-        ImGui::Text(str.c_str());
     }
     ImGui::End(); // Settings
 }

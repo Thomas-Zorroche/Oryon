@@ -9,8 +9,9 @@
 #include <memory>
 
 // TEMP
-#include "GLRenderer/Mesh.hpp"
 #include "GLRenderer/Shader.h"
+#include "GLRenderer/Scene/Entity.hpp"
+
 
 
 namespace oryon
@@ -45,13 +46,10 @@ private:
 	float _viewportWidth = 500.0f;
 	float _viewportHeight = 300.0f;
 
-	// TEMP
-	//std::shared_ptr<glrenderer::VertexArray> _vertexArray = nullptr;
-	std::shared_ptr<glrenderer::Mesh> _mesh = nullptr;
+	std::shared_ptr<glrenderer::Scene> _scene = std::make_shared<glrenderer::Scene>();
 
 	std::shared_ptr<glrenderer::Shader> _shader = nullptr;
 	glm::mat4 _projection;
-
 };
 
 
