@@ -5,6 +5,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 
 
 #include "GLRenderer/Renderer.hpp"
@@ -54,7 +55,6 @@ void Editor::initialize(GLFWwindow * window)
     _framebuffer = std::make_unique<Framebuffer>();
     float ratio = _viewportWidth / _viewportHeight;
     _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
-
 
     auto plan = _scene->createEntity("Base Plan");
     plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
@@ -133,7 +133,6 @@ void Editor::drawWorldOutliner()
 {
     if (ImGui::Begin("World Outliner"))
     {
-
         _scene->forEachEntity([&entitySelected = _entitySelected](glrenderer::Entity entity)
         {
             std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
@@ -169,7 +168,7 @@ void Editor::drawMeshPanel()
     {
         // Input Text for Label Mesh
         std::string& label = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
-        ImGui::InputText("Label", (char*)label.c_str(), size_t(15));
+        ImGui::InputText("Label", &label);
 
         // Transform
         if (ImGui::TreeNode("Transform"))
