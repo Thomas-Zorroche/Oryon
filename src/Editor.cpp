@@ -56,21 +56,10 @@ void Editor::initialize(GLFWwindow * window)
     _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
 
 
-    _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
+    auto plan = _scene->createEntity("Base Plan");
+    plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
 
-    auto redPlan = _scene->createEntity("Plan 01");
-    redPlan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-    auto& scale = redPlan.getComponent<glrenderer::TransformComponent>().scale;
-    scale = glm::vec3(0.2f);
-
-    auto redPlan2 = _scene->createEntity("Plan 02");
-    redPlan2.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-    auto& scale2 = redPlan2.getComponent<glrenderer::TransformComponent>().scale;
-    scale2 = glm::vec3(0.2f);
-    auto& location2 = redPlan2.getComponent<glrenderer::TransformComponent>().location;
-    location2 = glm::vec3(0.5f, 0, 0);
-
-    _entitySelected = redPlan;
+    _entitySelected = plan;
 }
 
 void Editor::draw()
@@ -134,11 +123,8 @@ void Editor::renderFramebuffer()
     {
         glrenderer::Renderer::clear();
 
-        _shader->Bind();
-        _shader->SetUniformMatrix4fv("uProjectionMatrix", _projection);
-
         // Render each entity that have a MeshComponent and a TransfromComponent
-        _scene->onUpdate(_shader);
+        _scene->onUpdate(_projection);
     }
     _framebuffer->unbind();
 }
@@ -181,19 +167,41 @@ void Editor::drawMeshPanel()
 
     if (ImGui::Begin("Mesh"))
     {
+        // Input Text for Label Mesh
         std::string& label = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
-
-        glm::vec3& location = _entitySelected.getComponent<glrenderer::TransformComponent>().location;
-        glm::vec3& rotation = _entitySelected.getComponent<glrenderer::TransformComponent>().rotation;
-        glm::vec3& scale = _entitySelected.getComponent<glrenderer::TransformComponent>().scale;
-
         ImGui::InputText("Label", (char*)label.c_str(), size_t(15));
 
+        // Transform
         if (ImGui::TreeNode("Transform"))
         {
-            ImGui::DragFloat3("Location", &location[0], 0.05f);
-            ImGui::DragFloat3("Rotation", &rotation[0], 0.05f);
-            ImGui::DragFloat3("Scale", &scale[0], 0.05f);
+            glm::vec3& location = _entitySelected.getComponent<glrenderer::TransformComponent>().location;
+            glm::vec3& rotation = _entitySelected.getComponent<glrenderer::TransformComponent>().rotation;
+            glm::vec3& scale = _entitySelected.getComponent<glrenderer::TransformComponent>().scale;
+
+            ImGui::DragFloat3("Location", &location[0], 0.001f);
+            ImGui::DragFloat3("Rotation", &rotation[0], 0.001f);
+            ImGui::DragFloat3("Scale", &scale[0], 0.001f);
+
+            ImGui::TreePop();
+            ImGui::Separator();
+        }
+
+        // Material
+        if (ImGui::TreeNode("Material"))
+        {
+            const char* materialTypes[] = { "Flat Color" };
+            static int mateiral_current = 0;
+            if (ImGui::Combo("Material Type", &mateiral_current, materialTypes, IM_ARRAYSIZE(materialTypes)))
+            {
+
+            }
+
+            auto& material = _entitySelected.getComponent<glrenderer::MeshComponent>().mesh->getMaterial();
+            if (ImGui::ColorEdit3("Color", &material->diffuse()[0]))
+            {
+                material->bind();
+                material->updateDiffuse();
+            }
 
             ImGui::TreePop();
             ImGui::Separator();
