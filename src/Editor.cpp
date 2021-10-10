@@ -8,7 +8,6 @@
 
 
 #include "GLRenderer/Renderer.hpp"
-#include "GLRenderer/Scene/Scene.hpp"
 #include "GLRenderer/Scene/Component.hpp"
 
 #include <string>
@@ -59,12 +58,19 @@ void Editor::initialize(GLFWwindow * window)
 
     _shader = std::make_shared<glrenderer::Shader>("res/shaders/Default.vert", "res/shaders/Default.frag");
 
-    auto redPlan = _scene->createEntity("Red Plan");
+    auto redPlan = _scene->createEntity("Plan 01");
     redPlan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-
     auto& scale = redPlan.getComponent<glrenderer::TransformComponent>().scale;
     scale = glm::vec3(0.2f);
 
+    auto redPlan2 = _scene->createEntity("Plan 02");
+    redPlan2.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+    auto& scale2 = redPlan2.getComponent<glrenderer::TransformComponent>().scale;
+    scale2 = glm::vec3(0.2f);
+    auto& location2 = redPlan2.getComponent<glrenderer::TransformComponent>().location;
+    location2 = glm::vec3(0.5f, 0, 0);
+
+    _entitySelected = redPlan;
 }
 
 void Editor::draw()
@@ -94,6 +100,7 @@ void Editor::draw()
     drawMeshPanel();
     drawWorldOutliner();
     drawViewer3DPanel();
+    drawMenuBar();
 
     ImGui::End(); // Main Window
 
@@ -101,6 +108,23 @@ void Editor::draw()
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+void Editor::drawMenuBar()
+{
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("Add"))
+        {
+            if (ImGui::MenuItem("Plan"))
+            {
+                auto& plan = _scene->createEntity("Plan");
+                plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
 }
 
 void Editor::renderFramebuffer()
@@ -119,6 +143,23 @@ void Editor::renderFramebuffer()
     _framebuffer->unbind();
 }
 
+void Editor::drawWorldOutliner()
+{
+    if (ImGui::Begin("World Outliner"))
+    {
+
+        _scene->forEachEntity([&entitySelected = _entitySelected](glrenderer::Entity entity)
+        {
+            std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
+
+            if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), entitySelected == entity))
+                entitySelected = entity;
+        });
+    }
+    ImGui::End(); // Settings
+}
+
+
 void Editor::drawSettingsPanel()
 {
     if (ImGui::Begin("Settings"))
@@ -135,40 +176,28 @@ void Editor::drawSettingsPanel()
 
 void Editor::drawMeshPanel()
 {
+    if (!_entitySelected)
+        return;
+
     if (ImGui::Begin("Mesh"))
     {
-        static char label[64] = "Cube";
-        ImGui::InputText("Label", label, IM_ARRAYSIZE(label));
+        std::string& label = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
+
+        glm::vec3& location = _entitySelected.getComponent<glrenderer::TransformComponent>().location;
+        glm::vec3& rotation = _entitySelected.getComponent<glrenderer::TransformComponent>().rotation;
+        glm::vec3& scale = _entitySelected.getComponent<glrenderer::TransformComponent>().scale;
+
+        ImGui::InputText("Label", (char*)label.c_str(), size_t(15));
 
         if (ImGui::TreeNode("Transform"))
         {
-            static float location[3] = { 1.0f, 1.0f, 1.0f };
-            static float rotation[3] = { 1.0f, 1.0f, 1.0f };
-            static float scale[3] = { 1.0f, 1.0f, 1.0f };
-
-            ImGui::DragFloat3("Location", location);
-            ImGui::DragFloat3("Rotation", rotation);
-            ImGui::DragFloat3("Scale", scale);
+            ImGui::DragFloat3("Location", &location[0], 0.05f);
+            ImGui::DragFloat3("Rotation", &rotation[0], 0.05f);
+            ImGui::DragFloat3("Scale", &scale[0], 0.05f);
 
             ImGui::TreePop();
             ImGui::Separator();
         }
-    }
-    ImGui::End(); // Settings
-}
-
-void Editor::drawWorldOutliner()
-{
-    if (ImGui::Begin("World Outliner"))
-    {
-        static int selected = -1;
-
-        if (ImGui::Selectable(ICON_MDI_CUBE "Plan", selected == 0))
-            selected = 0;
-        if (ImGui::Selectable(ICON_MDI_CUBE "Plan 001", selected == 1))
-            selected = 1;
-        if (ImGui::Selectable(ICON_MDI_CUBE "Plan 002", selected == 2))
-            selected = 2;
     }
     ImGui::End(); // Settings
 }

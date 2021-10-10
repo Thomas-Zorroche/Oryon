@@ -10,12 +10,14 @@
 
 // TEMP
 #include "GLRenderer/Shader.h"
+#include "GLRenderer/Scene/Scene.hpp"
 #include "GLRenderer/Scene/Entity.hpp"
 
 
 
 namespace oryon
 {
+
 
 class Editor
 {
@@ -33,6 +35,7 @@ private:
 	void drawViewer3DPanel();
 	void drawWorldOutliner();
 	void drawMeshPanel();
+	void drawMenuBar();
 
 	void renderFramebuffer();
 
@@ -50,6 +53,8 @@ private:
 
 	std::shared_ptr<glrenderer::Shader> _shader = nullptr;
 	glm::mat4 _projection;
+
+	glrenderer::Entity _entitySelected;
 };
 
 
