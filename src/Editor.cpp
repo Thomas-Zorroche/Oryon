@@ -60,6 +60,7 @@ void Editor::initialize(GLFWwindow * window)
     plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
 
     _entitySelected = plan;
+    onEntitySelectedChanged();
 }
 
 void Editor::draw()
@@ -133,17 +134,19 @@ void Editor::drawWorldOutliner()
 {
     if (ImGui::Begin("World Outliner"))
     {
-        _scene->forEachEntity([&entitySelected = _entitySelected](glrenderer::Entity entity)
+        _scene->forEachEntity([this](glrenderer::Entity entity)
         {
             std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
 
-            if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), entitySelected == entity))
-                entitySelected = entity;
+            if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
+            {
+                _entitySelected = entity;
+                onEntitySelectedChanged();
+            }
         });
     }
     ImGui::End(); // Settings
 }
-
 
 void Editor::drawSettingsPanel()
 {
@@ -167,9 +170,15 @@ void Editor::drawMeshPanel()
     if (ImGui::Begin("Mesh"))
     {
         // Input Text for Label Mesh
-        std::string& label = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
-        ImGui::InputText("Label", &label);
-
+        ImGui::InputText("Label", &_bufferEntitySelectedName);
+        ImGui::SameLine();
+        if (ImGui::Button("Rename"))
+        {
+            _scene->makeUniqueLabel(_bufferEntitySelectedName);
+            std::string& labelEntitySelected = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
+            labelEntitySelected = _bufferEntitySelectedName;
+        }
+        
         // Transform
         if (ImGui::TreeNode("Transform"))
         {
@@ -279,6 +288,11 @@ void Editor::setupDockspace()
     }
 
     style.WindowMinSize.x = minWinSize;
+}
+
+void Editor::onEntitySelectedChanged()
+{
+    _bufferEntitySelectedName = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
 }
 
 void Editor::free()

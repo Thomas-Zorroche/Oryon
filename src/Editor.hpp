@@ -41,6 +41,8 @@ private:
 
 	void setupDockspace();
 
+	void onEntitySelectedChanged();
+
 private:
 	bool _dockspaceOpen = true;
 	
@@ -55,6 +57,7 @@ private:
 	glm::mat4 _projection;
 
 	glrenderer::Entity _entitySelected;
+	std::string _bufferEntitySelectedName = "";
 };
 
 
