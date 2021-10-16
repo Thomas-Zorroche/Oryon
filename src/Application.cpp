@@ -1,4 +1,5 @@
 ﻿#include "Application.hpp"
+#include "Events/Input.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -18,6 +19,7 @@ void Application::run()
 	float lastFrame = 0.0f; // Time of last frame
 	glEnable(GL_DEPTH_TEST);
 
+	Input::setWindow(_window->GetNativeWindow());
 	_editor->initialize(_window->GetNativeWindow());
 
 	while (!glfwWindowShouldClose(_window->GetNativeWindow()))

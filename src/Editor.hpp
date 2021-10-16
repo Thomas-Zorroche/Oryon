@@ -9,9 +9,9 @@
 #include <memory>
 
 // TEMP
-#include "GLRenderer/Shader.h"
 #include "GLRenderer/Scene/Scene.hpp"
 #include "GLRenderer/Scene/Entity.hpp"
+#include "CameraController.hpp"
 
 
 
@@ -52,9 +52,7 @@ private:
 	float _viewportHeight = 300.0f;
 
 	std::shared_ptr<glrenderer::Scene> _scene = std::make_shared<glrenderer::Scene>();
-
-	std::shared_ptr<glrenderer::Shader> _shader = nullptr;
-	glm::mat4 _projection;
+	std::shared_ptr<CameraController> _cameraController;
 
 	glrenderer::Entity _entitySelected;
 	std::string _bufferEntitySelectedName = "";

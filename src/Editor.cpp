@@ -51,10 +51,10 @@ void Editor::initialize(GLFWwindow * window)
     io.Fonts->AddFontFromMemoryCompressedTTF(MaterialDesign_compressed_data, MaterialDesign_compressed_size, 16, &icons_config, icons_ranges);
 
     // Initialize Renderer Data
+    _cameraController = std::make_shared<CameraController>();
     glrenderer::Renderer::init();
     _framebuffer = std::make_unique<Framebuffer>();
     float ratio = _viewportWidth / _viewportHeight;
-    _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
 
     auto plan = _scene->createEntity("Base Plan");
     plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
@@ -121,11 +121,14 @@ void Editor::renderFramebuffer()
 {
     _framebuffer->bind(_viewportWidth, _viewportHeight);
     // Draw 3D Scene here
+    glrenderer::Renderer::setCamera(_cameraController->getCamera()->getViewProjectionMatrix());
     {
         glrenderer::Renderer::clear();
 
         // Render each entity that have a MeshComponent and a TransfromComponent
-        _scene->onUpdate(_projection);
+        _scene->onUpdate();
+
+        _cameraController->onUpdate();
     }
     _framebuffer->unbind();
 }
@@ -174,9 +177,9 @@ void Editor::drawMeshPanel()
         ImGui::SameLine();
         if (ImGui::Button("Rename"))
         {
-            _scene->makeUniqueLabel(_bufferEntitySelectedName);
             std::string& labelEntitySelected = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
             labelEntitySelected = _bufferEntitySelectedName;
+            _scene->makeUniqueLabel(labelEntitySelected);
         }
         
         // Transform
@@ -230,7 +233,8 @@ void Editor::drawViewer3DPanel()
             _framebuffer->resize(_viewportWidth, _viewportHeight);
 
             float ratio = _viewportWidth / _viewportHeight;
-            _projection = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 5000.0f);
+            auto& camera = _cameraController->getCamera();
+            camera->updateAspectRatio(ratio);
         }
 
         ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
