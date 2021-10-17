@@ -17,22 +17,22 @@ namespace oryon {
 
 	void CameraController::onUpdate()
 	{
-		// Blender Navigation
-		const glm::vec2& mousePosition = Input::getMousePosition();
-		glm::vec2 delta = (mousePosition - _currentMousePosition);
-		_currentMousePosition = mousePosition;
+		if (Input::isKeyPressed(KeyCode::LeftAlt))
+		{
+			const glm::vec2& mousePosition = Input::getMousePosition();
+			glm::vec2 delta = (mousePosition - _currentMousePosition);
+			_currentMousePosition = mousePosition;
 
-		// Pan --> Shift + MMB
-		if (Input::isKeyPressed(KeyCode::LeftShift) && Input::isMouseButtonPressed(MouseCode::ButtonMiddle))
-			_camera->pan(delta);
-
-		// Zoom --> Ctrl + MMB
-		else if (Input::isKeyPressed(KeyCode::LeftCtrl) && Input::isMouseButtonPressed(MouseCode::ButtonMiddle))
-			_camera->zoom(delta.y);
-
-		// Rotate --> MMB
-		else if (Input::isMouseButtonPressed(MouseCode::ButtonMiddle))
-			_camera->rotate(delta);
+			// Pan
+			if (Input::isMouseButtonPressed(MouseCode::ButtonMiddle))
+				_camera->pan(delta);
+			// Zoom
+			else if (Input::isMouseButtonPressed(MouseCode::ButtonRight))
+				_camera->zoom(delta.y);
+			// Rotate
+			else if (Input::isMouseButtonPressed(MouseCode::ButtonLeft))
+				_camera->rotate(delta);
+		}
 
 		_camera->updateVectors();
 	}

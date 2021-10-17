@@ -56,10 +56,13 @@ void Editor::initialize(GLFWwindow * window)
     _framebuffer = std::make_unique<Framebuffer>();
     float ratio = _viewportWidth / _viewportHeight;
 
-    auto plan = _scene->createEntity("Base Plan");
-    plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+    //auto plan = _scene->createEntity("Base Plan");
+    //plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
 
-    _entitySelected = plan;
+    auto cube = _scene->createEntity("Cube");
+    cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+
+    _entitySelected = cube;
     onEntitySelectedChanged();
 }
 
@@ -110,6 +113,11 @@ void Editor::drawMenuBar()
             {
                 auto& plan = _scene->createEntity("Plan");
                 plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+            }
+            if (ImGui::MenuItem("Cube"))
+            {
+                auto& cube = _scene->createEntity("Cube");
+                cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
             }
             ImGui::EndMenu();
         }
