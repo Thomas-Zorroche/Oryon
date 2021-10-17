@@ -190,7 +190,7 @@ void Editor::drawMeshPanel()
             glm::vec3& scale = _entitySelected.getComponent<glrenderer::TransformComponent>().scale;
 
             ImGui::DragFloat3("Location", &location[0], 0.001f);
-            ImGui::DragFloat3("Rotation", &rotation[0], 0.001f);
+            ImGui::DragFloat3("Rotation", &rotation[0], 0.1f);
             ImGui::DragFloat3("Scale", &scale[0], 0.001f);
 
             ImGui::TreePop();
