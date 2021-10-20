@@ -19,6 +19,9 @@
 #include "imgui/IconsMaterialDesignIcons.h"
 #include <imgui/MaterialDesign.inl>
 
+// TEMP
+#include "GLRenderer/Lighting/PointLight.hpp"
+
 namespace oryon
 {
 
@@ -56,14 +59,29 @@ void Editor::initialize(GLFWwindow * window)
     _framebuffer = std::make_unique<Framebuffer>();
     float ratio = _viewportWidth / _viewportHeight;
 
-    //auto plan = _scene->createEntity("Base Plan");
-    //plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+    {
+        auto plan = _scene->createEntity("Base Plan");
+        plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+        auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
+        transformPlan.scale *= 10;
 
-    auto cube = _scene->createEntity("Cube");
-    cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+        auto cube = _scene->createEntity("Cube");
+        cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+        auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
+        transformCube.location.y += 1.0f;
 
-    _entitySelected = cube;
-    onEntitySelectedChanged();
+        _entitySelected = cube;
+        onEntitySelectedChanged();
+
+        // Lights
+        auto pointLight = _scene->createEntity("Point Light");
+        pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
+        pointLight.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+        auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
+        transformLight.location = { 4.0, 5.0, 5 };
+        transformLight.scale *= 0.1;
+    }
+
 }
 
 void Editor::draw()
@@ -129,7 +147,7 @@ void Editor::renderFramebuffer()
 {
     _framebuffer->bind(_viewportWidth, _viewportHeight);
     // Draw 3D Scene here
-    glrenderer::Renderer::setCamera(_cameraController->getCamera()->getViewProjectionMatrix());
+    glrenderer::Renderer::setCamera(_cameraController->getCamera());
     {
         glrenderer::Renderer::clear();
 
