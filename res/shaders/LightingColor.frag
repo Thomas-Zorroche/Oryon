@@ -16,6 +16,9 @@ struct PointLight
     float quadratic;
 };
 
+// Constants
+#define POINT_LIGHTS_COUNT 8
+
 // Vertex Shader Inputs
 in vec3 vNormal;  
 in vec3 vFragPos;
@@ -23,7 +26,7 @@ in vec3 vFragPos;
 
 // Uniforms
 uniform vec3 uColor;
-uniform PointLight pointLight;
+uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform vec3 uCameraPos;
 
 vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
@@ -36,7 +39,10 @@ void main()
     vec3 normal = vNormal;
     vec3 viewDir = normalize(uCameraPos - vFragPos);
 
-    color += ComputePointLight(pointLight, normal, vFragPos, viewDir);
+    for (int i = 0; i < POINT_LIGHTS_COUNT; i++)
+    {
+        color += ComputePointLight(pointLights[i], normal, vFragPos, viewDir);
+    }
 
     fFragColor = vec4(color, 1.0);
 }
@@ -46,7 +52,7 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
 {
     // TEMP
     vec3 materialAmbient = vec3(0.2);
-    vec3 materialDiffuse = vec3(0.9);
+    vec3 materialDiffuse = uColor;
     vec3 materialSpecular = vec3(0.9);
     // END EMP
 

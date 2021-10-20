@@ -34,7 +34,10 @@ private:
 	void drawSettingsPanel();
 	void drawViewer3DPanel();
 	void drawWorldOutliner();
-	void drawMeshPanel();
+	void drawObjectPanel();
+	void drawLightPanel();
+	void drawMaterialPanel();
+
 	void drawMenuBar();
 
 	void renderFramebuffer();

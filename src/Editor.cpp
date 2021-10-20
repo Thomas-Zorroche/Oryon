@@ -107,9 +107,14 @@ void Editor::draw()
 
     setupDockspace();
 
+    // Panels
     drawSettingsPanel();
-    drawMeshPanel();
+    drawObjectPanel();
     drawWorldOutliner();
+    drawLightPanel();
+    drawMaterialPanel();
+
+
     drawViewer3DPanel();
     drawMenuBar();
 
@@ -127,16 +132,35 @@ void Editor::drawMenuBar()
     {
         if (ImGui::BeginMenu("Add"))
         {
-            if (ImGui::MenuItem("Plan"))
+            if (ImGui::BeginMenu("Mesh"))
             {
-                auto& plan = _scene->createEntity("Plan");
-                plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+                if (ImGui::MenuItem("Plan"))
+                {
+                    auto& plan = _scene->createEntity("Plan");
+                    plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+                }
+                if (ImGui::MenuItem("Cube"))
+                {
+                    auto& cube = _scene->createEntity("Cube");
+                    cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+                }
+                ImGui::EndMenu();
             }
-            if (ImGui::MenuItem("Cube"))
+
+            if (ImGui::BeginMenu("Light"))
             {
-                auto& cube = _scene->createEntity("Cube");
-                cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+                if (ImGui::MenuItem("Point"))
+                {
+                    auto& pointLight = _scene->createEntity("Point Light");
+                    pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
+                    pointLight.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+                    auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
+                    transformLight.location = { 0.0, 0.0, 0.0 };
+                    transformLight.scale *= 0.1;
+                }
+                ImGui::EndMenu();
             }
+
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -191,12 +215,12 @@ void Editor::drawSettingsPanel()
     ImGui::End(); // Settings
 }
 
-void Editor::drawMeshPanel()
+void Editor::drawObjectPanel()
 {
-    if (!_entitySelected)
+    if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::TransformComponent>())
         return;
 
-    if (ImGui::Begin("Mesh"))
+    if (ImGui::Begin("Object"))
     {
         // Input Text for Label Mesh
         ImGui::InputText("Label", &_bufferEntitySelectedName);
@@ -215,36 +239,56 @@ void Editor::drawMeshPanel()
             glm::vec3& rotation = _entitySelected.getComponent<glrenderer::TransformComponent>().rotation;
             glm::vec3& scale = _entitySelected.getComponent<glrenderer::TransformComponent>().scale;
 
-            ImGui::DragFloat3("Location", &location[0], 0.001f);
+            ImGui::DragFloat3("Location", &location[0], 0.1f);
             ImGui::DragFloat3("Rotation", &rotation[0], 0.1f);
-            ImGui::DragFloat3("Scale", &scale[0], 0.001f);
-
-            ImGui::TreePop();
-            ImGui::Separator();
-        }
-
-        // Material
-        if (ImGui::TreeNode("Material"))
-        {
-            const char* materialTypes[] = { "Flat Color" };
-            static int mateiral_current = 0;
-            if (ImGui::Combo("Material Type", &mateiral_current, materialTypes, IM_ARRAYSIZE(materialTypes)))
-            {
-
-            }
-
-            auto& material = _entitySelected.getComponent<glrenderer::MeshComponent>().mesh->getMaterial();
-            if (ImGui::ColorEdit3("Color", &material->diffuse()[0]))
-            {
-                material->bind();
-                material->updateDiffuse();
-            }
+            ImGui::DragFloat3("Scale", &scale[0], 0.01f);
 
             ImGui::TreePop();
             ImGui::Separator();
         }
     }
-    ImGui::End(); // Settings
+    ImGui::End(); // Mesh
+}
+
+void Editor::drawMaterialPanel()
+{
+    if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::MeshComponent>())
+        return;
+
+    if (ImGui::Begin("Material"))
+    {
+        const char* materialTypes[] = { "Flat Color" };
+        static int mateiral_current = 0;
+        if (ImGui::Combo("Material Type", &mateiral_current, materialTypes, IM_ARRAYSIZE(materialTypes)))
+        {
+
+        }
+
+        auto& material = _entitySelected.getComponent<glrenderer::MeshComponent>().mesh->getMaterial();
+        if (ImGui::ColorEdit3("Color", &material->diffuse()[0]))
+        {
+            material->bind();
+            material->updateDiffuse();
+        }
+    }
+    ImGui::End(); // Light
+
+}
+
+
+void Editor::drawLightPanel()
+{
+    if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::LightComponent>())
+        return;
+
+    if (ImGui::Begin("Light"))
+    {
+        auto light = _entitySelected.getComponent<glrenderer::LightComponent>().light;
+        ImGui::ColorEdit3("Color", &light->getColor()[0]);
+
+        ImGui::DragFloat("intensity", &light->getIntensity(), 0.1f, 0.0f, 10.0f);
+    }
+    ImGui::End(); // Light
 }
 
 void Editor::drawViewer3DPanel()
