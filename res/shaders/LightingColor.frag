@@ -51,9 +51,9 @@ void main()
 vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
     // TEMP
-    vec3 materialAmbient = vec3(0.2);
+    vec3 materialAmbient = uColor;
     vec3 materialDiffuse = uColor;
-    vec3 materialSpecular = vec3(0.9);
+    vec3 materialSpecular = vec3(0.5);
     // END EMP
 
 
