@@ -9,7 +9,7 @@ namespace oryon
 
 Application::Application(int argc, char** argv)
 {
-	_window = std::make_unique<Window>(argc, argv);
+	_window = std::make_unique<Window>(argc, argv, [this](Event& e) {this->onEvent(e); });
 	_editor = std::make_unique<Editor>();
 }
 
@@ -39,5 +39,11 @@ void Application::run()
 	_editor->free();
 
 }
+
+void Application::onEvent(Event& e)
+{
+	_editor->onEvent(e);
+}
+
 
 }

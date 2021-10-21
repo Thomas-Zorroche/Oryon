@@ -20,11 +20,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Math/Math.h"
-
 // TEMP
 #include "GLRenderer/Lighting/PointLight.hpp"
-
 #include "Events/Input.hpp"
 
 namespace oryon
@@ -314,17 +311,6 @@ void Editor::drawViewer3DPanel()
 
         ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
 
-        // Guizmo
-        //if (Input::isKeyPressed(KeyCode::Space))
-        //{
-        //    switch (_guizmoType)
-        //    {
-        //    case ImGuizmo::OPERATION::TRANSLATE: _guizmoType = ImGuizmo::OPERATION::ROTATE; break;
-        //        case ImGuizmo::OPERATION::ROTATE:    _guizmoType = ImGuizmo::OPERATION::SCALE; break;
-        //        case ImGuizmo::OPERATION::SCALE:     _guizmoType = -1; break;
-        //        case -1:                             _guizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
-        //    }
-        //}
 
         if (_entitySelected && _guizmoType != -1)
         {
@@ -346,14 +332,12 @@ void Editor::drawViewer3DPanel()
             if (ImGuizmo::IsUsing())
             {
                 glm::vec3 translation, rotation, scale;
-                math::decomposeTransform(transform, translation, rotation, scale);
                 
-                // Avoid gimbal rotation block
-                glm::vec3 originalRotation = transformComponent.rotation;
-                glm::vec3 deltaRotation = rotation - transformComponent.rotation;
-
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),
+                    glm::value_ptr(rotation), glm::value_ptr(scale));
+                
                 transformComponent.location = translation; 
-                transformComponent.rotation += deltaRotation; 
+                transformComponent.rotation = rotation;
                 transformComponent.scale = scale; 
             }
         }
@@ -418,6 +402,40 @@ void Editor::onEntitySelectedChanged()
 {
     _bufferEntitySelectedName = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
 }
+
+void Editor::onEvent(Event& e)
+{
+    KeyEvent* keyEvent = e.isKeyEvent();
+    if (keyEvent)
+    {
+        switch (keyEvent->getKeyCode())
+        {
+            case Key::Space: nextGuizmoType();
+        }
+        return;
+    }
+
+    MouseScrollEvent* scrollEvent = e.isScrollEvent();
+    if (scrollEvent)
+    {
+        _cameraController->getCamera()->zoom(scrollEvent->getYOffset() * 5.0);
+        return;
+    }
+}
+
+void Editor::nextGuizmoType()
+{
+    // -1 --> TRANSLATE --> ROTATE --> SCALE --> -1
+    switch (_guizmoType)
+    {
+        case ImGuizmo::OPERATION::TRANSLATE: _guizmoType = ImGuizmo::OPERATION::ROTATE; break;
+        case ImGuizmo::OPERATION::ROTATE:    _guizmoType = ImGuizmo::OPERATION::SCALE; break;
+        case ImGuizmo::OPERATION::SCALE:     _guizmoType = -1; break;
+        case -1:                             _guizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
+    }
+}
+
+
 
 void Editor::free()
 {

@@ -17,20 +17,20 @@ namespace oryon {
 
 	void CameraController::onUpdate()
 	{
-		if (Input::isKeyPressed(KeyCode::LeftAlt))
+		if (Input::isKeyPressed(Key::LeftAlt))
 		{
 			const glm::vec2& mousePosition = Input::getMousePosition();
 			glm::vec2 delta = (mousePosition - _currentMousePosition);
 			_currentMousePosition = mousePosition;
 
 			// Pan
-			if (Input::isMouseButtonPressed(MouseCode::ButtonMiddle))
+			if (Input::isMouseButtonPressed(Mouse::ButtonMiddle))
 				_camera->pan(delta);
 			// Zoom
-			else if (Input::isMouseButtonPressed(MouseCode::ButtonRight))
+			else if (Input::isMouseButtonPressed(Mouse::ButtonRight))
 				_camera->zoom(delta.y);
 			// Rotate
-			else if (Input::isMouseButtonPressed(MouseCode::ButtonLeft))
+			else if (Input::isMouseButtonPressed(Mouse::ButtonLeft))
 				_camera->rotate(delta);
 		}
 

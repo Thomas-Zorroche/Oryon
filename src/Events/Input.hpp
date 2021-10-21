@@ -6,20 +6,30 @@
 
 namespace oryon {
 
-	enum KeyCode
-	{
-		Space = 32,
-		LeftShift = 340,
-		LeftCtrl = 341,
-		LeftAlt = 342
-	};
+	using KeyCode = uint16_t;
 
-	enum MouseCode
+	namespace Key
 	{
-		ButtonLeft = 0,
-		ButtonRight = 1,
-		ButtonMiddle = 2
-	};
+		enum : KeyCode
+		{
+			Space = 32,
+			LeftShift = 340,
+			LeftCtrl = 341,
+			LeftAlt = 342
+		};
+	}
+
+	using MouseCode = uint16_t;
+
+	namespace Mouse
+	{
+		enum : MouseCode
+		{
+			ButtonLeft = 0,
+			ButtonRight = 1,
+			ButtonMiddle = 2
+		};
+	}
 
 	class Input
 	{

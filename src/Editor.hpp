@@ -8,6 +8,8 @@
 #include "Framebuffer.hpp"
 #include <memory>
 
+#include "Events/Event.hpp"
+
 // TEMP
 #include "GLRenderer/Scene/Scene.hpp"
 #include "GLRenderer/Scene/Entity.hpp"
@@ -29,6 +31,8 @@ namespace oryon
 
 		void free();
 
+		void onEvent(Event& e);
+
 	private:
 		void drawSettingsPanel();
 		void drawViewer3DPanel();
@@ -44,6 +48,8 @@ namespace oryon
 		void setupDockspace();
 
 		void onEntitySelectedChanged();
+
+		void nextGuizmoType();
 
 	private:
 		bool _dockspaceOpen = true;

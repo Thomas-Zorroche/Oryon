@@ -5,6 +5,8 @@
 #include "Window.hpp"
 #include "Editor.hpp"
 
+#include "Events/Event.hpp"
+
 namespace oryon
 {
 
@@ -17,6 +19,8 @@ public:
 	Window& getWindow() { return * _window; }
 
 	void run();
+
+	void onEvent(Event& e);
 
 private:
 	std::unique_ptr<Window> _window = nullptr;
