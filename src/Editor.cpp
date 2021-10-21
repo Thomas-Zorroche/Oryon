@@ -78,10 +78,8 @@ void Editor::initialize(GLFWwindow * window)
         // Lights
         auto pointLight = _scene->createEntity("Point Light");
         pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
-        pointLight.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
         auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
         transformLight.location = { 4.0, 5.0, 5 };
-        transformLight.scale *= 0.1;
     }
 
 }
@@ -155,10 +153,8 @@ void Editor::drawMenuBar()
                 {
                     auto& pointLight = _scene->createEntity("Point Light");
                     pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
-                    pointLight.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
                     auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
                     transformLight.location = { 0.0, 0.0, 0.0 };
-                    transformLight.scale *= 0.1;
                 }
                 ImGui::EndMenu();
             }
@@ -289,6 +285,18 @@ void Editor::drawLightPanel()
         ImGui::ColorEdit3("Color", &light->getColor()[0]);
 
         ImGui::DragFloat("intensity", &light->getIntensity(), 0.1f, 0.0f, 10.0f);
+        
+        glrenderer::PointLight* pointLight = light->isPointLight();
+        if (pointLight)
+        {
+            float radius = pointLight->getRadius();
+            if (ImGui::DragFloat("radius", &radius, 0.1f, 7.0f, 600.0f))
+            {
+                pointLight->setRadius(radius);
+            }
+            ImGui::Text("Linear: %f", pointLight->getLinear());
+            ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
+        }
     }
     ImGui::End(); // Light
 }
