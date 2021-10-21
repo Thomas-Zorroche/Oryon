@@ -6,7 +6,10 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
+#include "imgui/ImGuizmo.h"
 
+#include "imgui/IconsMaterialDesignIcons.h"
+#include <imgui/MaterialDesign.inl>
 
 #include "GLRenderer/Renderer.hpp"
 #include "GLRenderer/Scene/Component.hpp"
@@ -15,12 +18,14 @@
 #include <iostream>
 
 #include "glm/gtc/matrix_transform.hpp"
+#include <glm/gtc/type_ptr.hpp>
 
-#include "imgui/IconsMaterialDesignIcons.h"
-#include <imgui/MaterialDesign.inl>
+#include "Math/Math.h"
 
 // TEMP
 #include "GLRenderer/Lighting/PointLight.hpp"
+
+#include "Events/Input.hpp"
 
 namespace oryon
 {
@@ -93,6 +98,7 @@ void Editor::draw()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 
     static bool demo = false;
     if (demo)
@@ -113,7 +119,6 @@ void Editor::draw()
     drawWorldOutliner();
     drawLightPanel();
     drawMaterialPanel();
-
 
     drawViewer3DPanel();
     drawMenuBar();
@@ -308,6 +313,51 @@ void Editor::drawViewer3DPanel()
         }
 
         ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
+
+        // Guizmo
+        //if (Input::isKeyPressed(KeyCode::Space))
+        //{
+        //    switch (_guizmoType)
+        //    {
+        //    case ImGuizmo::OPERATION::TRANSLATE: _guizmoType = ImGuizmo::OPERATION::ROTATE; break;
+        //        case ImGuizmo::OPERATION::ROTATE:    _guizmoType = ImGuizmo::OPERATION::SCALE; break;
+        //        case ImGuizmo::OPERATION::SCALE:     _guizmoType = -1; break;
+        //        case -1:                             _guizmoType = ImGuizmo::OPERATION::TRANSLATE; break;
+        //    }
+        //}
+
+        if (_entitySelected && _guizmoType != -1)
+        {
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::SetDrawlist();
+            float windowWidth = (float)ImGui::GetWindowWidth();
+            float windowHeight = (float)ImGui::GetWindowHeight();
+            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+
+            const glm::mat4& view = _cameraController->getCamera()->getViewMatrix();
+            const glm::mat4& projection = _cameraController->getCamera()->getProjectionMatrix();
+
+            auto& transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
+            glm::mat4 transform = transformComponent.getModelMatrix();
+
+            ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
+                (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+
+            if (ImGuizmo::IsUsing())
+            {
+                glm::vec3 translation, rotation, scale;
+                math::decomposeTransform(transform, translation, rotation, scale);
+                
+                // Avoid gimbal rotation block
+                glm::vec3 originalRotation = transformComponent.rotation;
+                glm::vec3 deltaRotation = rotation - transformComponent.rotation;
+
+                transformComponent.location = translation; 
+                transformComponent.rotation += deltaRotation; 
+                transformComponent.scale = scale; 
+            }
+        }
+
     }
     ImGui::End();
 }

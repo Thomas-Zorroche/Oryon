@@ -8,10 +8,10 @@ namespace oryon {
 
 	enum KeyCode
 	{
+		Space = 32,
 		LeftShift = 340,
 		LeftCtrl = 341,
 		LeftAlt = 342
-
 	};
 
 	enum MouseCode

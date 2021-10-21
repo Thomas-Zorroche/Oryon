@@ -101,3 +101,7 @@ VS_RegisterFiles("${MY_SHADERS}")
 # copy shader files to build directory
 file(COPY ${CMAKE_SOURCE_DIR}/res
   DESTINATION ${CMAKE_BINARY_DIR})
+
+# copy imgui config ini file
+file(COPY ${CMAKE_SOURCE_DIR}/imgui.ini
+DESTINATION ${CMAKE_BINARY_DIR})

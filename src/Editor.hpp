@@ -18,48 +18,49 @@
 namespace oryon
 {
 
+	class Editor
+	{
+	public:
+		Editor();
 
-class Editor
-{
-public:
-	Editor();
+		void initialize(GLFWwindow* window);
 
-	void initialize(GLFWwindow* window);
+		void draw();
 
-	void draw();
+		void free();
 
-	void free();
+	private:
+		void drawSettingsPanel();
+		void drawViewer3DPanel();
+		void drawWorldOutliner();
+		void drawObjectPanel();
+		void drawLightPanel();
+		void drawMaterialPanel();
 
-private:
-	void drawSettingsPanel();
-	void drawViewer3DPanel();
-	void drawWorldOutliner();
-	void drawObjectPanel();
-	void drawLightPanel();
-	void drawMaterialPanel();
+		void drawMenuBar();
 
-	void drawMenuBar();
+		void renderFramebuffer();
 
-	void renderFramebuffer();
+		void setupDockspace();
 
-	void setupDockspace();
+		void onEntitySelectedChanged();
 
-	void onEntitySelectedChanged();
-
-private:
-	bool _dockspaceOpen = true;
+	private:
+		bool _dockspaceOpen = true;
 	
-	std::unique_ptr<Framebuffer> _framebuffer = nullptr;
+		std::unique_ptr<Framebuffer> _framebuffer = nullptr;
 
-	float _viewportWidth = 500.0f;
-	float _viewportHeight = 300.0f;
+		float _viewportWidth = 500.0f;
+		float _viewportHeight = 300.0f;
 
-	std::shared_ptr<glrenderer::Scene> _scene = std::make_shared<glrenderer::Scene>();
-	std::shared_ptr<CameraController> _cameraController;
+		std::shared_ptr<glrenderer::Scene> _scene = std::make_shared<glrenderer::Scene>();
+		std::shared_ptr<CameraController> _cameraController;
 
-	glrenderer::Entity _entitySelected;
-	std::string _bufferEntitySelectedName = "";
-};
+		glrenderer::Entity _entitySelected;
+		std::string _bufferEntitySelectedName = "";
+
+		int _guizmoType = -1;
+	};
 
 
 }
