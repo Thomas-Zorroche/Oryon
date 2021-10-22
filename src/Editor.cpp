@@ -156,6 +156,14 @@ void Editor::drawMenuBar()
                     auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
                     transformLight.location = { 0.0, 0.0, 0.0 };
                 }
+                if (ImGui::MenuItem("Directional"))
+                {
+                    auto& pointLight = _scene->createEntity("Directional Light");
+                    pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Directional));
+                    auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
+                    transformLight.location = { 0.0, 0.0, 0.0 };
+                    transformLight.rotation = { 1.0, 1.0, 1.0 };
+                }
                 ImGui::EndMenu();
             }
 

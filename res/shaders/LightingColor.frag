@@ -16,6 +16,16 @@ struct PointLight
     float quadratic;
 };
 
+struct DirectionalLight 
+{
+    float intensity;
+    vec3 direction;  
+  
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
 // Constants
 #define POINT_LIGHTS_COUNT 8
 
@@ -23,14 +33,15 @@ struct PointLight
 in vec3 vNormal;  
 in vec3 vFragPos;
 
-
 // Uniforms
 uniform vec3 uColor;
 uniform float uShininess;
-uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform vec3 uCameraPos;
+uniform PointLight pointLights[POINT_LIGHTS_COUNT];
+uniform DirectionalLight directionalLight;
 
 vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir);
 
 void main()
 {
@@ -44,6 +55,8 @@ void main()
     {
         color += ComputePointLight(pointLights[i], normal, vFragPos, viewDir);
     }
+
+    color += ComputeDirectionalLight(directionalLight, normal, viewDir);
 
     fFragColor = vec4(color, 1.0);
 }
@@ -73,5 +86,30 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     vec3 specular = light.specular * materialSpecular * specularStrength * attenuation * light.intensity;
 
     return vec3(ambient + diffuse + specular);
+}
+
+vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir)
+{
+    // TEMP
+    vec3 materialAmbient = uColor;
+    vec3 materialDiffuse = uColor;
+    vec3 materialSpecular = vec3(0.5);
+    // END TEMP
+
+    vec3 lightDirection = normalize(-light.direction);
+
+    // diffuse shading
+    float diffuseStrength = max(dot(normal, lightDirection), 0.0);
+
+    // specular shading
+    vec3 reflectDir = reflect(-lightDirection, normal);
+    float specularStrength = pow(max(dot(viewDir, reflectDir), 0.0), uShininess);
+
+    // combine results
+    vec3 ambient  = light.ambient  * materialAmbient * light.intensity;
+    vec3 diffuse  = light.diffuse  * diffuseStrength * materialDiffuse * light.intensity;
+    vec3 specular = light.specular * specularStrength * materialSpecular * light.intensity;
+    
+    return (ambient + diffuse + specular);
 }
 
