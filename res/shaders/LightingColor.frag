@@ -26,6 +26,7 @@ in vec3 vFragPos;
 
 // Uniforms
 uniform vec3 uColor;
+uniform float uShininess;
 uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform vec3 uCameraPos;
 
@@ -54,16 +55,15 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     vec3 materialAmbient = uColor;
     vec3 materialDiffuse = uColor;
     vec3 materialSpecular = vec3(0.5);
-    // END EMP
-
+    // END TEMP
 
     vec3 lightDirection = normalize(light.position - fragPos);
     float diffuseStrength = max(dot(normal, lightDirection), 0.0);
     
-    vec3 reflectDir = reflect(-lightDirection, normal);
-    
-    float specularStrength = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-    
+    // Blinn Spec
+    vec3 halfwayDir = normalize(lightDirection + viewDir);  
+    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), uShininess);
+
     float distance = length(light.position - fragPos);
 
     float attenuation = 1.0 / (1.0 + light.linear * distance + light.quadratic * (distance * distance));  

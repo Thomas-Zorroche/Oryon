@@ -263,11 +263,15 @@ void Editor::drawMaterialPanel()
         }
 
         auto& material = _entitySelected.getComponent<glrenderer::MeshComponent>().mesh->getMaterial();
-        if (ImGui::ColorEdit3("Color", &material->diffuse()[0]))
+        if (ImGui::ColorEdit3("Color", &material->getDiffuse()[0]))
         {
-            material->bind();
             material->updateDiffuse();
         }
+        if (ImGui::DragFloat("Roughness", &material->getRoughness(), 0.005f, 0.0f, 1.0f))
+        {
+            material->updateRoughness();
+        }
+        ImGui::Text("Shininess: %f", material->getShininess());
     }
     ImGui::End(); // Light
 
