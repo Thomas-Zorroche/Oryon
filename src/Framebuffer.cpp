@@ -24,8 +24,8 @@ namespace oryon
 
             glGenRenderbuffers(1, &_rboID);
             glBindRenderbuffer(GL_RENDERBUFFER, _rboID);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _rboID);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, _rboID);
 
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
                 std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
@@ -42,7 +42,7 @@ namespace oryon
             glBindTexture(GL_TEXTURE_2D, 0);
 
             glBindRenderbuffer(GL_RENDERBUFFER, _rboID);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

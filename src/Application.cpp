@@ -17,7 +17,6 @@ void Application::run()
 {
 	float deltaTime = 0.0f;	// Time between current frame and last frame
 	float lastFrame = 0.0f; // Time of last frame
-	glEnable(GL_DEPTH_TEST);
 
 	Input::setWindow(_window->GetNativeWindow());
 	_editor->initialize(_window->GetNativeWindow());

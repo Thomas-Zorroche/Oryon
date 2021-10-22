@@ -174,7 +174,7 @@ void Editor::renderFramebuffer()
         glrenderer::Renderer::clear();
 
         // Render each entity that have a MeshComponent and a TransfromComponent
-        _scene->onUpdate();
+        _scene->onUpdate(_entitySelected);
 
         _cameraController->onUpdate();
     }
