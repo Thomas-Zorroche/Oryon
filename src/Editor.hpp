@@ -27,7 +27,7 @@ namespace oryon
 
 		void initialize(GLFWwindow* window);
 
-		void draw();
+		void onUpdate();
 
 		void free();
 
@@ -54,7 +54,8 @@ namespace oryon
 	private:
 		bool _dockspaceOpen = true;
 	
-		std::unique_ptr<Framebuffer> _framebuffer = nullptr;
+		std::unique_ptr<Framebuffer> _renderingFramebuffer = nullptr;
+		std::unique_ptr<Framebuffer> _depthFramebuffer = nullptr;
 
 		float _viewportWidth = 500.0f;
 		float _viewportHeight = 300.0f;

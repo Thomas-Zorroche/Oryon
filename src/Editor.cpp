@@ -22,6 +22,7 @@
 
 // TEMP
 #include "GLRenderer/Lighting/PointLight.hpp"
+#include "GLRenderer/Lighting/DirectionalLight.hpp"
 #include "Events/Input.hpp"
 
 namespace oryon
@@ -51,15 +52,16 @@ void Editor::initialize(GLFWwindow * window)
     icons_config.OversampleH = icons_config.OversampleV = 1;
     icons_config.PixelSnapH = true;
     icons_config.SizePixels = 18.f;
-    // Setup fonts                                                                                    // Font Indices
+    // Setup fonts                                                                                    // Font Indices   
     io.FontDefault = io.Fonts->AddFontFromFileTTF("res/fonts/OpenSans/OpenSans-Regular.ttf", 16.0f);  // 1
     io.Fonts->AddFontFromMemoryCompressedTTF(MaterialDesign_compressed_data, MaterialDesign_compressed_size, 16, &icons_config, icons_ranges);
 
     // Initialize Renderer Data
     _cameraController = std::make_shared<CameraController>();
     glrenderer::Renderer::init();
-    _framebuffer = std::make_unique<Framebuffer>();
-    float ratio = _viewportWidth / _viewportHeight;
+
+    _renderingFramebuffer = Framebuffer::createRenderingBuffer(64, 64); // used for main rendering (viewport)
+    _depthFramebuffer = Framebuffer::createDepthBuffer(1024, 1024);     // used for shadow mapping
 
     {
         auto plan = _scene->createEntity("Base Plan");
@@ -70,26 +72,33 @@ void Editor::initialize(GLFWwindow * window)
         auto cube = _scene->createEntity("Cube");
         cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
         auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
-        transformCube.location.y += 1.0f;
+        transformCube.location.y += 2.0f;
 
         _entitySelected = cube;
         onEntitySelectedChanged();
 
         // Lights
-        auto pointLight = _scene->createEntity("Point Light");
-        pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
-        auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
-        transformLight.location = { 4.0, 5.0, 5 };
+        auto entityLight = _scene->createEntity("Directional Light");
+        auto& baseLight = glrenderer::BaseLight::createLight(glrenderer::LightType::Directional);
+        entityLight.addComponent<glrenderer::LightComponent>(baseLight);
+        entityLight.addComponent<glrenderer::LineComponent>(std::make_shared<glrenderer::Line>());
+        auto& transformLight = entityLight.getComponent<glrenderer::TransformComponent>();
+        transformLight.location = { 0.0, 5.7, 6.9 };
+        transformLight.rotation = { 48.0, 26.2, -21.7 };
+
+        auto dirLight = std::static_pointer_cast<glrenderer::DirectionalLight>(baseLight);
+        _scene->setDirectionalLight(dirLight);
     }
 
 }
 
-void Editor::draw()
+void Editor::onUpdate()
 {
+    _cameraController->onUpdate();
+
+    //New ImGui Frame
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-    //New Frame
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -102,7 +111,6 @@ void Editor::draw()
         glrenderer::Renderer::clear();
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         return;
     }
 
@@ -111,14 +119,22 @@ void Editor::draw()
     // Panels
     drawSettingsPanel();
     drawObjectPanel();
-    drawWorldOutliner();
     drawLightPanel();
     drawMaterialPanel();
-
     drawViewer3DPanel();
-    drawMenuBar();
 
-    ImGui::End(); // Main Window
+    drawWorldOutliner();
+    drawMenuBar();
+    
+    if (ImGui::Begin("Depth Map"))
+    {
+        ImVec2 wsize = ImGui::GetContentRegionAvail();
+        ImGui::Image((ImTextureID)_depthFramebuffer->getTextureId(), ImVec2(1024, 1024), ImVec2(0, 1), ImVec2(1, 0));
+    }
+    ImGui::End();
+
+
+    ImGui::End();
 
     renderFramebuffer();
 
@@ -175,18 +191,46 @@ void Editor::drawMenuBar()
 
 void Editor::renderFramebuffer()
 {
-    _framebuffer->bind(_viewportWidth, _viewportHeight);
-    // Draw 3D Scene here
-    glrenderer::Renderer::setCamera(_cameraController->getCamera());
+    // TODO move this in rendering 
+
+    // Render to depth map
+    _depthFramebuffer->bind(1024, 1024);
     {
+        // Set View and Projection matrices
+        //glrenderer::Renderer::setCamera(lightSpaceMatrix, glm::vec3(0));
+
+        // Clear Viewport
         glrenderer::Renderer::clear();
 
-        // Render each entity that have a MeshComponent and a TransfromComponent
-        _scene->onUpdate(_entitySelected);
-
-        _cameraController->onUpdate();
+        // Render Scene
+        _scene->onUpdate(_entitySelected, true /* DEPTH */);
     }
-    _framebuffer->unbind();
+    _depthFramebuffer->unbind();
+
+
+    // Render scene with shadow mapping
+    _renderingFramebuffer->bind(_viewportWidth, _viewportHeight);
+    {
+        // Set View and Projection matrices
+        glrenderer::Renderer::setCamera(_cameraController->getCamera());
+        
+        // Clear Viewport
+        glrenderer::Renderer::clear();
+
+        // Render Scene
+        _scene->onUpdate(_entitySelected, false, _depthFramebuffer->getTextureId());
+    }
+    _renderingFramebuffer->unbind();
+
+    /* API PERFECT
+    * 
+    * BeginScene() --> fbo.bind + setCamera + clear
+    * 
+    * _scene->update()
+    * 
+    * End Scene() --> fbo.unbind
+    
+    */
 }
 
 void Editor::drawWorldOutliner()
@@ -309,6 +353,13 @@ void Editor::drawLightPanel()
             ImGui::Text("Linear: %f", pointLight->getLinear());
             ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
         }
+
+        glrenderer::DirectionalLight* dirLight = light->isDirectionalLight();
+        if (dirLight)
+        {
+            ImGui::DragFloat("Far Plane Frustum", &_scene->getDirectionalLight()->getFarPlane(), 1.0f, 5.0f, 500.0f);
+        }
+
     }
     ImGui::End(); // Light
 }
@@ -322,14 +373,14 @@ void Editor::drawViewer3DPanel()
         {
             _viewportWidth = wsize.x;
             _viewportHeight = wsize.y;
-            _framebuffer->resize(_viewportWidth, _viewportHeight);
+            _renderingFramebuffer->resize(_viewportWidth, _viewportHeight);
 
             float ratio = _viewportWidth / _viewportHeight;
             auto& camera = _cameraController->getCamera();
             camera->updateAspectRatio(ratio);
         }
 
-        ImGui::Image((ImTextureID)_framebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((ImTextureID)_renderingFramebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
 
 
         if (_entitySelected && _guizmoType != -1)
@@ -465,7 +516,8 @@ void Editor::free()
     ImGui::DestroyContext();
 
     glrenderer::Renderer::free();
-    _framebuffer->free();
+    _renderingFramebuffer->free();
+    _depthFramebuffer->free();
 }
 
 }

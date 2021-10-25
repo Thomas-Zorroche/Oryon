@@ -25,7 +25,7 @@ void Application::run()
 	{
 		float currentFrame = glfwGetTime();
 
-		_editor->draw();
+		_editor->onUpdate();
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(_window->GetNativeWindow());
