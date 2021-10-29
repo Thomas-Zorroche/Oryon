@@ -67,15 +67,12 @@ void Editor::initialize(GLFWwindow * window)
         auto plan = _scene->createEntity("Base Plan");
         plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
         auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
-        transformPlan.scale *= 10;
+        transformPlan.scale *= 50;
 
         auto cube = _scene->createEntity("Cube");
         cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
         auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
         transformCube.location.y += 2.0f;
-
-        _entitySelected = cube;
-        onEntitySelectedChanged();
 
         // Lights
         auto entityLight = _scene->createEntity("Directional Light");
@@ -88,6 +85,9 @@ void Editor::initialize(GLFWwindow * window)
 
         auto dirLight = std::static_pointer_cast<glrenderer::DirectionalLight>(baseLight);
         _scene->setDirectionalLight(dirLight);
+
+        _entitySelected = entityLight;
+        onEntitySelectedChanged();
     }
 
 }
@@ -126,14 +126,6 @@ void Editor::onUpdate()
     drawWorldOutliner();
     drawMenuBar();
     
-    if (ImGui::Begin("Depth Map"))
-    {
-        ImVec2 wsize = ImGui::GetContentRegionAvail();
-        ImGui::Image((ImTextureID)_depthFramebuffer->getTextureId(), ImVec2(1024, 1024), ImVec2(0, 1), ImVec2(1, 0));
-    }
-    ImGui::End();
-
-
     ImGui::End();
 
     renderFramebuffer();
@@ -221,16 +213,6 @@ void Editor::renderFramebuffer()
         _scene->onUpdate(_entitySelected, false, _depthFramebuffer->getTextureId());
     }
     _renderingFramebuffer->unbind();
-
-    /* API PERFECT
-    * 
-    * BeginScene() --> fbo.bind + setCamera + clear
-    * 
-    * _scene->update()
-    * 
-    * End Scene() --> fbo.unbind
-    
-    */
 }
 
 void Editor::drawWorldOutliner()
@@ -354,10 +336,36 @@ void Editor::drawLightPanel()
             ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
         }
 
-        glrenderer::DirectionalLight* dirLight = light->isDirectionalLight();
-        if (dirLight)
+        if (_scene->getDirectionalLight())
         {
+            ImGui::Checkbox("Soft Shadow", &_scene->getDirectionalLight()->getSoftShadow());
+            ImGui::DragFloat("Size", &_scene->getDirectionalLight()->getSize(), 0.001f, 0.001f, 25.0f);
             ImGui::DragFloat("Far Plane Frustum", &_scene->getDirectionalLight()->getFarPlane(), 1.0f, 5.0f, 500.0f);
+            ImGui::DragFloat("Near Plane Frustum", &_scene->getDirectionalLight()->getNearPlane(), 0.1f, -500.0f, 500.0f);
+            //ImGui::DragFloat("Frustum Size", &_scene->getDirectionalLight()->getFrustumSize(), 0.1f,-200.0f, 200.0f);
+            ImGui::DragFloat("Offset Position", &_scene->getDirectionalLight()->getOffsetPosition(), 0.1f, -15.0f, 15.0f);
+
+            static int textureSizeId = 0;
+            if (ImGui::Combo("##Texture Size", &(int&)textureSizeId, "1024\0 2048\0 4096\0\0"))
+            {
+                switch (textureSizeId)
+                {
+                case 0: _depthFramebuffer->resize(1024, 1024); break;
+                case 1: _depthFramebuffer->resize(2048, 2048); break;
+                case 2: _depthFramebuffer->resize(4096, 4096); break;
+                }
+            }
+
+            float viewerWidth = ImGui::GetWindowContentRegionWidth();
+            ImGui::BeginChild("DepthMap Viewer", ImVec2(viewerWidth, viewerWidth));
+            ImVec2 wsize = ImGui::GetContentRegionAvail();
+            ImGui::Image(
+                (ImTextureID)_depthFramebuffer->getTextureId(),
+                ImVec2(viewerWidth, viewerWidth),
+                ImVec2(0, 1),
+                ImVec2(1, 0)
+            );
+            ImGui::EndChild();
         }
 
     }

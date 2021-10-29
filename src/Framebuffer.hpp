@@ -28,6 +28,9 @@ namespace oryon
 
 		void free();
 
+		float getWidth() const { return _width; }
+		float getHeight() const { return _height; }
+
 		enum Type
 		{
 			Rendering,
@@ -40,6 +43,9 @@ namespace oryon
 		unsigned int _id = 0;
 		unsigned int _textureID = 0;
 		unsigned int _rboID = 0;
+
+		float _width = 1024.0f;
+		float _height = 1024.0f;
 
 		Type _type;
 	};

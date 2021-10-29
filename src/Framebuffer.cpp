@@ -19,6 +19,9 @@ namespace oryon
     Framebuffer::Framebuffer(float width, float height, Type type)
         : _type(type)
     {
+        _width = width;
+        _height = height;
+
         glGenFramebuffers(1, &_id);
         glBindFramebuffer(GL_FRAMEBUFFER, _id);
         {
@@ -72,6 +75,9 @@ namespace oryon
 
     void Framebuffer::resize(float width, float height)
     {
+        _width = width;
+        _height = height;
+
         glBindFramebuffer(GL_FRAMEBUFFER, _id);
         {
             glBindTexture(GL_TEXTURE_2D, _textureID);
@@ -94,7 +100,7 @@ namespace oryon
     void Framebuffer::bind(float viewportWidth, float viewportHeight)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _id);
-        glViewport(0, 0, viewportWidth, viewportHeight);
+        glViewport(0, 0, _width, _height);
     }
 
     void Framebuffer::unbind()
