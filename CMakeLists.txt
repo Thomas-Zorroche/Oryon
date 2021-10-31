@@ -35,7 +35,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 # ////////////////////////// LIBRAIRIES ///////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////////
 
-link_directories(${CMAKE_SOURCE_DIR}/lib ${CMAKE_GLRENDERER_DIR}/install)
+link_directories(${CMAKE_SOURCE_DIR}/lib ${CMAKE_GLRENDERER_DIR}/install ${CMAKE_IMBRIDGE_DIR}/install)
 
 # find the required packages
 if(UNIX)
@@ -59,7 +59,7 @@ else()
 endif(WIN32)
 
 add_library(GLAD "thirdparty/glad.c")
-set(LIBS ${LIBS} GLAD GLRenderer)
+set(LIBS ${LIBS} GLAD GLRenderer ImBridge)
 
 macro(makeLink src dest target)
   add_custom_command(TARGET ${target} POST_BUILD COMMAND ${CMAKE_COMMAND} -E create_symlink ${src} ${dest}  DEPENDS  ${dest} COMMENT "mklink ${src} -> ${dest}")
@@ -79,7 +79,8 @@ include_directories(
   ${CMAKE_BINARY_DIR}/src
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/include
-  ${CMAKE_GLRENDERER_DIR}/src)
+  ${CMAKE_GLRENDERER_DIR}/src
+  ${CMAKE_IMBRIDGE_DIR}/src/include)
 
 # Grab all the source files
 file(GLOB_RECURSE MY_SOURCES ${CMAKE_SOURCE_DIR}/src/*)

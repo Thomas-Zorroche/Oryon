@@ -23,7 +23,10 @@
 // TEMP
 #include "GLRenderer/Lighting/PointLight.hpp"
 #include "GLRenderer/Lighting/DirectionalLight.hpp"
+#include "GLRenderer/Properties/Render/ShadowsProperties.hpp"
 #include "Events/Input.hpp"
+
+using namespace glrenderer;
 
 namespace oryon
 {
@@ -60,9 +63,16 @@ void Editor::initialize(GLFWwindow * window)
     _cameraController = std::make_shared<CameraController>();
     glrenderer::Renderer::init();
 
+    // Create Framebuffers
     _renderingFramebuffer = Framebuffer::createRenderingBuffer(64, 64); // used for main rendering (viewport)
     _depthFramebuffer = Framebuffer::createDepthBuffer(1024, 1024);     // used for shadow mapping
 
+    // PANELS
+    _panels.push_back(Panel("Render", {
+        { "Shadow", Renderer::getShadowProperties()->getBridge() } // Node
+    }));
+
+    // SCENE
     {
         auto plan = _scene->createEntity("Base Plan");
         plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
@@ -117,14 +127,19 @@ void Editor::onUpdate()
     setupDockspace();
 
     // Panels
-    drawSettingsPanel();
-    drawObjectPanel();
-    drawLightPanel();
-    drawMaterialPanel();
-    drawViewer3DPanel();
+    for (auto& panel : _panels)
+    {
+        panel.render();
+    }
 
-    drawWorldOutliner();
-    drawMenuBar();
+    //renderRenderPanel();
+    renderObjectPanel();
+    renderLightPanel();
+    renderMaterialPanel();
+
+    renderViewer3DPanel();
+    renderWorldOutliner();
+    renderMenuBar();
     
     ImGui::End();
 
@@ -134,7 +149,7 @@ void Editor::onUpdate()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void Editor::drawMenuBar()
+void Editor::renderMenuBar()
 {
     if (ImGui::BeginMenuBar())
     {
@@ -215,7 +230,7 @@ void Editor::renderFramebuffer()
     _renderingFramebuffer->unbind();
 }
 
-void Editor::drawWorldOutliner()
+void Editor::renderWorldOutliner()
 {
     if (ImGui::Begin("World Outliner"))
     {
@@ -233,9 +248,9 @@ void Editor::drawWorldOutliner()
     ImGui::End(); // Settings
 }
 
-void Editor::drawSettingsPanel()
+void Editor::renderRenderPanel()
 {
-    if (ImGui::Begin("Settings"))
+    if (ImGui::Begin("Render"))
     {
         static float color[3] = { 0.0f , 1.0f, 0.0f };
 
@@ -247,7 +262,7 @@ void Editor::drawSettingsPanel()
     ImGui::End(); // Settings
 }
 
-void Editor::drawObjectPanel()
+void Editor::renderObjectPanel()
 {
     if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::TransformComponent>())
         return;
@@ -282,7 +297,7 @@ void Editor::drawObjectPanel()
     ImGui::End(); // Mesh
 }
 
-void Editor::drawMaterialPanel()
+void Editor::renderMaterialPanel()
 {
     if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::MeshComponent>())
         return;
@@ -312,7 +327,7 @@ void Editor::drawMaterialPanel()
 }
 
 
-void Editor::drawLightPanel()
+void Editor::renderLightPanel()
 {
     if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::LightComponent>())
         return;
@@ -336,7 +351,7 @@ void Editor::drawLightPanel()
             ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
         }
 
-        if (_scene->getDirectionalLight())
+        if (_scene->getDirectionalLight() && light->isDirectionalLight())
         {
             ImGui::Checkbox("Soft Shadow", &_scene->getDirectionalLight()->getSoftShadow());
             ImGui::DragFloat("Size", &_scene->getDirectionalLight()->getSize(), 0.001f, 0.001f, 25.0f);
@@ -356,6 +371,28 @@ void Editor::drawLightPanel()
                 }
             }
 
+            //static int blockerSearchSamples = 0;
+            //if (ImGui::Combo("##Blocker Search Samples", &(int&)blockerSearchSamples, "32\0 64\0 128\0\0"))
+            //{
+            //    switch (blockerSearchSamples)
+            //    {
+            //    case 0: glrenderer::Renderer::getShadowSettings()->setBlockerSearchSamples(32); break;
+            //    case 1: xxx->setBlockerSearchSamples(64); break;
+            //    case 2: xxx->setBlockerSearchSamples(128); break;
+            //    }
+            //}
+
+            //static int PCFFilteringSamples = 0;
+            //if (ImGui::Combo("##Blocker Search Samples", &(int&)PCFFilteringSamples, "32\0 64\0 128\0\0"))
+            //{
+            //    switch (PCFFilteringSamples)
+            //    {
+            //    case 0: xxx->setPCFFilteringSamples(32);  break;
+            //    case 1: xxx->setPCFFilteringSamples(64);  break;
+            //    case 2: xxx->setPCFFilteringSamples(128); break;
+            //    }
+            //}
+
             float viewerWidth = ImGui::GetWindowContentRegionWidth();
             ImGui::BeginChild("DepthMap Viewer", ImVec2(viewerWidth, viewerWidth));
             ImVec2 wsize = ImGui::GetContentRegionAvail();
@@ -372,7 +409,7 @@ void Editor::drawLightPanel()
     ImGui::End(); // Light
 }
 
-void Editor::drawViewer3DPanel()
+void Editor::renderViewer3DPanel()
 {
     if (ImGui::Begin("Viewer 3D"))
     {

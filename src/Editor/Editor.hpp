@@ -7,13 +7,16 @@
 
 #include "Framebuffer.hpp"
 #include <memory>
+#include <vector>
 
-#include "Events/Event.hpp"
+#include "../Events/Event.hpp"
+
+#include "Panel.hpp"
 
 // TEMP
 #include "GLRenderer/Scene/Scene.hpp"
 #include "GLRenderer/Scene/Entity.hpp"
-#include "CameraController.hpp"
+#include "../CameraController.hpp"
 
 
 
@@ -34,14 +37,14 @@ namespace oryon
 		void onEvent(Event& e);
 
 	private:
-		void drawSettingsPanel();
-		void drawViewer3DPanel();
-		void drawWorldOutliner();
-		void drawObjectPanel();
-		void drawLightPanel();
-		void drawMaterialPanel();
+		void renderRenderPanel();
+		void renderViewer3DPanel();
+		void renderWorldOutliner();
+		void renderObjectPanel();
+		void renderLightPanel();
+		void renderMaterialPanel();
 
-		void drawMenuBar();
+		void renderMenuBar();
 
 		void renderFramebuffer();
 
@@ -67,6 +70,8 @@ namespace oryon
 		std::string _bufferEntitySelectedName = "";
 
 		int _guizmoType = -1;
+
+		std::vector<Panel> _panels;
 	};
 
 
