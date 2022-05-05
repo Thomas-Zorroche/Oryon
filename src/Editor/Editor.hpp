@@ -37,7 +37,6 @@ namespace oryon
 		void onEvent(Event& e);
 
 	private:
-		void renderRenderPanel();
 		void renderViewer3DPanel();
 		void renderWorldOutliner();
 		void renderObjectPanel();

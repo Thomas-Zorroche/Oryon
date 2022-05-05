@@ -132,7 +132,6 @@ void Editor::onUpdate()
         panel.render();
     }
 
-    //renderRenderPanel();
     renderObjectPanel();
     renderLightPanel();
     renderMaterialPanel();
@@ -248,20 +247,6 @@ void Editor::renderWorldOutliner()
     ImGui::End(); // Settings
 }
 
-void Editor::renderRenderPanel()
-{
-    if (ImGui::Begin("Render"))
-    {
-        static float color[3] = { 0.0f , 1.0f, 0.0f };
-
-        if (ImGui::ColorEdit3("Color", &color[0]))
-        {
-            glrenderer::Renderer::setClearColor(glm::vec4(color[0], color[1], color[2], 1.0f));
-        }
-    }
-    ImGui::End(); // Settings
-}
-
 void Editor::renderObjectPanel()
 {
     if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::TransformComponent>())
@@ -294,7 +279,7 @@ void Editor::renderObjectPanel()
             ImGui::Separator();
         }
     }
-    ImGui::End(); // Mesh
+    ImGui::End(); // Object
 }
 
 void Editor::renderMaterialPanel()
@@ -353,7 +338,6 @@ void Editor::renderLightPanel()
 
         if (_scene->getDirectionalLight() && light->isDirectionalLight())
         {
-            ImGui::Checkbox("Soft Shadow", &_scene->getDirectionalLight()->getSoftShadow());
             ImGui::DragFloat("Size", &_scene->getDirectionalLight()->getSize(), 0.001f, 0.001f, 25.0f);
             ImGui::DragFloat("Far Plane Frustum", &_scene->getDirectionalLight()->getFarPlane(), 1.0f, 5.0f, 500.0f);
             ImGui::DragFloat("Near Plane Frustum", &_scene->getDirectionalLight()->getNearPlane(), 0.1f, -500.0f, 500.0f);
