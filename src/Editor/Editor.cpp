@@ -13,6 +13,7 @@
 
 #include "GLRenderer/Renderer.hpp"
 #include "GLRenderer/Scene/Component.hpp"
+#include "GLRenderer/Framebuffer.hpp"
 
 #include <string>
 #include <iostream>
@@ -62,10 +63,6 @@ void Editor::initialize(GLFWwindow * window)
     // Initialize Renderer Data
     _cameraController = std::make_shared<CameraController>();
     glrenderer::Renderer::init();
-
-    // Create Framebuffers
-    _renderingFramebuffer = Framebuffer::createRenderingBuffer(64, 64); // used for main rendering (viewport)
-    _depthFramebuffer = Framebuffer::createDepthBuffer(1024, 1024);     // used for shadow mapping
 
     // PANELS
     _panels.push_back(Panel("Render", {
@@ -142,7 +139,7 @@ void Editor::onUpdate()
     
     ImGui::End();
 
-    renderFramebuffer();
+    renderScene();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -195,38 +192,9 @@ void Editor::renderMenuBar()
     }
 }
 
-void Editor::renderFramebuffer()
+void Editor::renderScene()
 {
-    // TODO move this in rendering 
-
-    // Render to depth map
-    _depthFramebuffer->bind(1024, 1024);
-    {
-        // Set View and Projection matrices
-        //glrenderer::Renderer::setCamera(lightSpaceMatrix, glm::vec3(0));
-
-        // Clear Viewport
-        glrenderer::Renderer::clear();
-
-        // Render Scene
-        _scene->onUpdate(_entitySelected, true /* DEPTH */);
-    }
-    _depthFramebuffer->unbind();
-
-
-    // Render scene with shadow mapping
-    _renderingFramebuffer->bind(_viewportWidth, _viewportHeight);
-    {
-        // Set View and Projection matrices
-        glrenderer::Renderer::setCamera(_cameraController->getCamera());
-        
-        // Clear Viewport
-        glrenderer::Renderer::clear();
-
-        // Render Scene
-        _scene->onUpdate(_entitySelected, false, _depthFramebuffer->getTextureId());
-    }
-    _renderingFramebuffer->unbind();
+    _scene->renderScene(_cameraController->getCamera(), _entitySelected);
 }
 
 void Editor::renderWorldOutliner()
@@ -349,9 +317,9 @@ void Editor::renderLightPanel()
             {
                 switch (textureSizeId)
                 {
-                case 0: _depthFramebuffer->resize(1024, 1024); break;
-                case 1: _depthFramebuffer->resize(2048, 2048); break;
-                case 2: _depthFramebuffer->resize(4096, 4096); break;
+                case 0: Renderer::getShadowMap()->resize(1024, 1024); break;
+                case 1: Renderer::getShadowMap()->resize(2048, 2048); break;
+                case 2: Renderer::getShadowMap()->resize(4096, 4096); break;
                 }
             }
 
@@ -381,7 +349,7 @@ void Editor::renderLightPanel()
             ImGui::BeginChild("DepthMap Viewer", ImVec2(viewerWidth, viewerWidth));
             ImVec2 wsize = ImGui::GetContentRegionAvail();
             ImGui::Image(
-                (ImTextureID)_depthFramebuffer->getTextureId(),
+                (ImTextureID)Renderer::getShadowMap()->getTextureId(),
                 ImVec2(viewerWidth, viewerWidth),
                 ImVec2(0, 1),
                 ImVec2(1, 0)
@@ -402,14 +370,14 @@ void Editor::renderViewer3DPanel()
         {
             _viewportWidth = wsize.x;
             _viewportHeight = wsize.y;
-            _renderingFramebuffer->resize(_viewportWidth, _viewportHeight);
+            Renderer::getRenderBuffer()->resize(_viewportWidth, _viewportHeight);
 
             float ratio = _viewportWidth / _viewportHeight;
             auto& camera = _cameraController->getCamera();
             camera->updateAspectRatio(ratio);
         }
 
-        ImGui::Image((ImTextureID)_renderingFramebuffer->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((ImTextureID)Renderer::getRenderBuffer()->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
 
 
         if (_entitySelected && _guizmoType != -1)
@@ -535,8 +503,6 @@ void Editor::nextGuizmoType()
     }
 }
 
-
-
 void Editor::free()
 {
     //Shutdown ImGUI
@@ -545,8 +511,6 @@ void Editor::free()
     ImGui::DestroyContext();
 
     glrenderer::Renderer::free();
-    _renderingFramebuffer->free();
-    _depthFramebuffer->free();
 }
 
 }

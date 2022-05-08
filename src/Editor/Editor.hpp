@@ -5,7 +5,7 @@
 
 #include <glm/glm.hpp>
 
-#include "Framebuffer.hpp"
+#include "GLRenderer/Framebuffer.hpp"
 #include <memory>
 #include <vector>
 
@@ -45,7 +45,7 @@ namespace oryon
 
 		void renderMenuBar();
 
-		void renderFramebuffer();
+		void renderScene();
 
 		void setupDockspace();
 
@@ -56,9 +56,6 @@ namespace oryon
 	private:
 		bool _dockspaceOpen = true;
 	
-		std::unique_ptr<Framebuffer> _renderingFramebuffer = nullptr;
-		std::unique_ptr<Framebuffer> _depthFramebuffer = nullptr;
-
 		float _viewportWidth = 500.0f;
 		float _viewportHeight = 300.0f;
 

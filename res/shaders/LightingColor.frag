@@ -26,35 +26,12 @@ struct DirectionalLight
     vec3 diffuse;
     vec3 specular;
 
-    bool softShadow;
     float frustumSize;
     float nearPlane;
 };
 
 // Constants
 #define POINT_LIGHTS_COUNT 8
-
-#define BLOCKER_SEARCH_NUM_SAMPLES 16 
-#define PCF_NUM_SAMPLES 16
-
-vec2 poissonDisk[16] = vec2[]( 
-  vec2( -0.94201624, -0.39906216 ), 
-  vec2( 0.94558609, -0.76890725 ), 
-  vec2( -0.094184101, -0.92938870 ), 
-  vec2( 0.34495938, 0.29387760 ), 
-  vec2( -0.91588581, 0.45771432 ), 
-  vec2( -0.81544232, -0.87912464 ), 
-  vec2( -0.38277543, 0.27676845 ), 
-  vec2( 0.97484398, 0.75648379 ), 
-  vec2( 0.44323325, -0.97511554 ), 
-  vec2( 0.53742981, -0.47373420 ), 
-  vec2( -0.26496911, -0.41893023 ), 
-  vec2( 0.79197514, 0.19090188 ), 
-  vec2( -0.24188840, 0.99706507 ), 
-  vec2( -0.81409955, 0.91437590 ), 
-  vec2( 0.19984126, 0.78641367 ), 
-  vec2( 0.14383161, -0.14100790 ) 
-);
 
 // Vertex Shader Inputs
 in vec3 vNormal;  
@@ -68,6 +45,12 @@ uniform vec3 uCameraPos;
 uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform DirectionalLight directionalLight;
 uniform sampler2D shadowMap;
+uniform int uSoftShadows; 
+uniform int uBlockerSearchSamples;
+uniform int uPCFFilteringSamples;
+uniform sampler1D uBlockerSearchDist;
+uniform sampler1D uPCFFilteringDist;
+
 
 vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow);
 vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow);
@@ -75,7 +58,6 @@ float ComputeShadow(vec4 fragPosLightSpace, vec3 normal);
 
 void main()
 {
-    //vec3 color = uColor;
     vec3 color = vec3(0.0);
 
     vec3 normal = vNormal;
@@ -91,7 +73,6 @@ void main()
     color += ComputeDirectionalLight(directionalLight, normal, viewDir, shadow);
 
     fFragColor = vec4(color, 1.0);
-    //fFragColor = vec4(vec3(1.0 - shadow), 1.0);
 }
 
 
@@ -142,17 +123,17 @@ vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, 
     vec3 diffuse  = light.diffuse  * diffuseStrength * materialDiffuse * light.intensity;
     vec3 specular = light.specular * specularStrength * materialSpecular * light.intensity;
     
-    //return vec3(ambient + diffuse + specular);
     return vec3(ambient + (1.0 - shadow) * (diffuse + specular));
-    
-    
-    
-    //return vec3(ambient + (1.0 - shadow) * (diffuse + specular));
 }
 
-float PenumbraSize(float zReceiver, float zBlocker) //Parallel plane estimation 
+float PenumbraSize(float zReceiver, float zBlocker) // Parallel plane estimation 
 { 
     return (zReceiver - zBlocker) / zBlocker; 
+}
+
+vec2 RandomDirection(sampler1D distribution, float u)
+{
+   return texture(distribution, u).xy * 2 - vec2(1);
 }
 
 void FindBlocker(out float avgBlockerDepth, out int numBlockers, vec2 uv, float zReceiver, float lightSizeUV)
@@ -162,9 +143,9 @@ void FindBlocker(out float avgBlockerDepth, out int numBlockers, vec2 uv, float 
     float blockerSum = 0; 
     numBlockers = 0; 
 
-    for( int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++i ) 
+    for( int i = 0; i < uBlockerSearchSamples; ++i ) 
     { 
-        float shadowMapDepth = texture(shadowMap, uv + poissonDisk[i] * searchWidth).r; 
+        float shadowMapDepth = texture(shadowMap, uv + RandomDirection(uBlockerSearchDist, i / float(uBlockerSearchSamples)) * searchWidth).r; 
         if ( shadowMapDepth < zReceiver - 0.005) { 
             blockerSum += shadowMapDepth; 
             numBlockers++; 
@@ -178,13 +159,13 @@ void FindBlocker(out float avgBlockerDepth, out int numBlockers, vec2 uv, float 
 float PCF_Filter( vec2 uv, float zReceiver, float filterRadiusUV ) 
 { 
     float sum = 0.0; 
-    for ( int i = 0; i < PCF_NUM_SAMPLES; ++i ) 
+    for ( int i = 0; i < uPCFFilteringSamples; ++i ) 
     { 
-        vec2 offset = poissonDisk[i] * filterRadiusUV; 
+        vec2 offset = RandomDirection(uPCFFilteringDist, i / float(uPCFFilteringSamples)) * filterRadiusUV; 
         float shadowMapDepth = texture(shadowMap, uv + offset).r;
         sum += shadowMapDepth < (zReceiver - 0.005) ? 1 : 0; 
     } 
-    return sum / PCF_NUM_SAMPLES; 
+    return sum / uPCFFilteringSamples; 
 }
 
 float ComputeShadow(vec4 fragPosLightSpace, vec3 normal)
@@ -199,7 +180,7 @@ float ComputeShadow(vec4 fragPosLightSpace, vec3 normal)
 
     // HARD SHADOWS
     // -----------------------------------------------------------------------
-    if (!directionalLight.softShadow)
+    if (uSoftShadows != 1)
     {
         // BIAS 
         vec3 lightDirection = normalize(-directionalLight.direction);
