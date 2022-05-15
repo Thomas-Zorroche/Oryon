@@ -71,10 +71,10 @@ void Editor::initialize(GLFWwindow * window)
 
     // SCENE
     {
-        auto plan = _scene->createEntity("Base Plan");
-        plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-        auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
-        transformPlan.scale *= 50;
+        //auto plan = _scene->createEntity("Base Plan");
+        //plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
+        //auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
+        //transformPlan.scale *= 50;
 
         auto cube = _scene->createEntity("Cube");
         cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
@@ -149,12 +149,32 @@ void Editor::renderMenuBar()
 {
     if (ImGui::BeginMenuBar())
     {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::BeginMenu("Import"))
+            {
+                if (ImGui::MenuItem("glTF"))
+                {
+                    static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
+                    //static const std::string modelPath = "C:/dev/gltf-models/New Sponza/Base/NewSponza_Main_Blender_glTF.gltf";
+                    if (!_scene->importModel(modelPath))
+                        std::cout << "Cannot open " << modelPath << std::endl;
+                    else
+                        std::cout << "Import " << modelPath << " into the scene" << std::endl;
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Add"))
         {
             if (ImGui::BeginMenu("Mesh"))
             {
                 if (ImGui::MenuItem("Plan"))
                 {
+                    // TODO replace by
+                    // _scene->AddShape(glrenderer::MeshShape::Plan);
                     auto& plan = _scene->createEntity("Plan");
                     plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
                 }
