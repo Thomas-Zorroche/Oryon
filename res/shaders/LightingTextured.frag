@@ -37,6 +37,7 @@ struct DirectionalLight
 in vec3 vNormal;  
 in vec3 vFragPos;
 in vec4 vFragPosLightSpace;
+in vec2 vTexCoords;
 
 // Uniforms
 uniform vec3 uColor;
@@ -51,35 +52,53 @@ uniform int uPCFFilteringSamples;
 uniform sampler1D uBlockerSearchDist;
 uniform sampler1D uPCFFilteringDist;
 
-vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow);
-vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow);
+uniform sampler2D uBaseColorTexture;
+uniform vec4 uBaseColorFactor;
+
+vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow, vec3 materialColor);
+vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow, vec3 materialColor);
 float ComputeShadow(vec4 fragPosLightSpace, vec3 normal);
 
-void main()
+// Constants
+const float GAMMA = 2.2;
+const float INV_GAMMA = 1. / GAMMA;
+
+vec3 LINEARtoSRGB(vec3 color) 
+{ 
+    return pow(color, vec3(INV_GAMMA)); 
+}
+
+vec4 SRGBtoLINEAR(vec4 srgbIn)
 {
-    vec3 color = vec3(0.0);
-
-    vec3 normal = vNormal;
-    vec3 viewDir = normalize(uCameraPos - vFragPos);
-
-    float shadow = ComputeShadow(vFragPosLightSpace, normal);
-
-    for (int i = 0; i < POINT_LIGHTS_COUNT; i++)
-    {
-        color += ComputePointLight(pointLights[i], normal, vFragPos, viewDir, shadow);
-    }
-
-    color += ComputeDirectionalLight(directionalLight, normal, viewDir, shadow);
-
-    fFragColor = vec4(color, 1.0);
+    return vec4(pow(srgbIn.xyz, vec3(GAMMA)), srgbIn.w);
 }
 
 
-vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow)
+void main()
+{
+    vec4 baseColorFromTexture = SRGBtoLINEAR(texture(uBaseColorTexture, vTexCoords));
+    vec4 baseColor = baseColorFromTexture;
+
+    vec3 normal = vNormal;
+    vec3 viewDir = normalize(uCameraPos - vFragPos);
+    
+    //float shadow = ComputeShadow(vFragPosLightSpace, normal);
+    float shadow = 0.0f;
+    
+    vec3 dirLightColor = ComputeDirectionalLight(directionalLight, normal, viewDir, shadow, baseColor.rgb);
+    for (int i = 0; i < POINT_LIGHTS_COUNT; i++)
+    {
+        dirLightColor += ComputePointLight(pointLights[i], normal, vFragPos, viewDir, shadow, baseColor.rgb);
+    }
+    
+
+    fFragColor = vec4(LINEARtoSRGB(dirLightColor), 1.0);
+}
+
+
+vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow, vec3 materialColor)
 {
     // TEMP
-    vec3 materialAmbient = uColor;
-    vec3 materialDiffuse = uColor;
     vec3 materialSpecular = vec3(0.5);
     // END TEMP
 
@@ -94,18 +113,16 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
 
     float attenuation = 1.0 / (1.0 + light.linear * distance + light.quadratic * (distance * distance));  
     
-    vec3 ambient = light.ambient * materialAmbient * attenuation * light.intensity;
-    vec3 diffuse = light.diffuse * materialDiffuse * diffuseStrength * attenuation * light.intensity;
+    vec3 ambient = light.ambient * materialColor * attenuation * light.intensity;
+    vec3 diffuse = light.diffuse * materialColor * diffuseStrength * attenuation * light.intensity;
     vec3 specular = light.specular * materialSpecular * specularStrength * attenuation * light.intensity;
 
     return vec3(ambient + diffuse + specular);
 }
 
-vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow)
+vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow, vec3 materialColor)
 {
     // TEMP
-    vec3 materialAmbient = uColor;
-    vec3 materialDiffuse = uColor;
     vec3 materialSpecular = vec3(0.5);
     // END TEMP
 
@@ -118,8 +135,8 @@ vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, 
     float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), uShininess);
 
     // combine results
-    vec3 ambient  = light.ambient  * materialAmbient * light.intensity;
-    vec3 diffuse  = light.diffuse  * diffuseStrength * materialDiffuse * light.intensity;
+    vec3 ambient  = light.ambient  * materialColor * light.intensity;
+    vec3 diffuse  = light.diffuse  * diffuseStrength * materialColor * light.intensity;
     vec3 specular = light.specular * specularStrength * materialSpecular * light.intensity;
     
     return vec3(ambient + (1.0 - shadow) * (diffuse + specular));
