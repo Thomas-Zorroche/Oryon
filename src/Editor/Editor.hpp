@@ -42,6 +42,8 @@ namespace oryon
 		void renderObjectPanel();
 		void renderLightPanel();
 		void renderMaterialPanel();
+		void renderPerformancePanel();
+		void renderWorldSettingsPanel();
 
 		void renderMenuBar();
 

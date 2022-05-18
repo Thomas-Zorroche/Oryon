@@ -64,6 +64,9 @@ void Editor::initialize(GLFWwindow * window)
     _cameraController = std::make_shared<CameraController>();
     glrenderer::Renderer::init();
 
+    // Create Lights
+    _scene->createLights(1);
+
     // PANELS
     _panels.push_back(Panel("Render", {
         { "Shadow", Renderer::getShadowProperties()->getBridge() } // Node
@@ -76,25 +79,19 @@ void Editor::initialize(GLFWwindow * window)
         //auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
         //transformPlan.scale *= 50;
 
-        auto cube = _scene->createEntity("Cube");
-        cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
-        auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
-        transformCube.location.y += 2.0f;
+        //auto cube = _scene->createEntity("Cube");
+        //cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
+        //auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
+        //transformCube.location.y += 2.0f;
+       
+        static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
+        _scene->importModel(modelPath);
 
-        // Lights
-        auto entityLight = _scene->createEntity("Directional Light");
-        auto& baseLight = glrenderer::BaseLight::createLight(glrenderer::LightType::Directional);
-        entityLight.addComponent<glrenderer::LightComponent>(baseLight);
-        entityLight.addComponent<glrenderer::LineComponent>(std::make_shared<glrenderer::Line>());
-        auto& transformLight = entityLight.getComponent<glrenderer::TransformComponent>();
-        transformLight.location = { 0.0, 5.7, 6.9 };
-        transformLight.rotation = { 48.0, 26.2, -21.7 };
+        //auto dirLight = std::static_pointer_cast<glrenderer::DirectionalLight>(baseLight);
+        //_scene->setDirectionalLight(dirLight);
 
-        auto dirLight = std::static_pointer_cast<glrenderer::DirectionalLight>(baseLight);
-        _scene->setDirectionalLight(dirLight);
-
-        _entitySelected = entityLight;
-        onEntitySelectedChanged();
+        //_entitySelected = entityLight;
+        //onEntitySelectedChanged();
     }
 
 }
@@ -136,6 +133,8 @@ void Editor::onUpdate()
     renderViewer3DPanel();
     renderWorldOutliner();
     renderMenuBar();
+    renderPerformancePanel();
+    renderWorldSettingsPanel();
     
     ImGui::End();
 
@@ -299,6 +298,19 @@ void Editor::renderMaterialPanel()
 
 }
 
+void Editor::renderWorldSettingsPanel()
+{
+    if (ImGui::Begin("World Settings"))
+    {
+        static int nPointLights = _scene->getPointLightNum();
+        if (ImGui::SliderInt("Point Lights", &nPointLights, 0, Renderer::getMaxNumTotalLights()))
+        {
+            _scene->updatePointLights(nPointLights);
+        }
+
+    }
+    ImGui::End(); // World Settings
+}
 
 void Editor::renderLightPanel()
 {
@@ -433,6 +445,16 @@ void Editor::renderViewer3DPanel()
     }
     ImGui::End();
 }
+
+void Editor::renderPerformancePanel()
+{
+    if (ImGui::Begin("Performance"))
+    {
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    }
+    ImGui::End();
+}
+
 
 void Editor::setupDockspace()
 {
