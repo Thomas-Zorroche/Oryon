@@ -18,5 +18,6 @@ namespace oryon {
 	private:
 		std::string _label;
 		std::shared_ptr<ImBridge::Bridge> _bridge;
+		bool _openAtStart = true;
 	};
 }

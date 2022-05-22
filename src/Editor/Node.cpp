@@ -1,6 +1,7 @@
 ﻿#include "Node.hpp"
 
 #include "ImBridge/Parameter.hpp"
+#include "imgui/imgui.h"
 
 namespace oryon {
 
@@ -12,9 +13,16 @@ namespace oryon {
 
 	void Node::render()
 	{
-		for (auto& parameter : _bridge->getParameters())
+		if (ImGui::TreeNodeEx(_label.c_str(), _openAtStart ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
-			parameter->render();
+			auto iter = _bridge->getParametersBegin();
+
+			while (iter != _bridge->getParametersEnd()) {
+				iter->second->render();
+				++iter;
+			}
+
+			ImGui::TreePop();
 		}
 	}
 }

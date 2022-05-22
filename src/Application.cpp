@@ -18,8 +18,10 @@ void Application::Run()
 {
 	_editor = std::make_unique<Editor>();
 	_rendererContext = std::make_shared<glrenderer::RendererContext>();
-	_scene = std::make_unique <glrenderer::Scene>(_rendererContext);
+	_scene = std::make_unique<glrenderer::Scene>(_rendererContext);
 	_camera = std::make_unique <glrenderer::Camera>();
+
+	_rendererContext->SetEvents(_scene);
 
 	float deltaTime = 0.0f;	// Time between current frame and last frame
 	float lastFrame = 0.0f; // Time of last frame
@@ -65,15 +67,10 @@ void Application::OnEvent(Event& e)
 	_editor->OnEvent(e);
 }
 
-void Application::SwitchRenderer(glrenderer::ERendererType rendererType)
-{
-	_rendererContext->SwitchRenderer(rendererType);
-	_scene->OnRendererSwitch(_rendererContext->GetRenderer());
-}
-
 void Application::CreateEditorPanels(std::vector<Panel>& panels)
 {
-	panels.push_back(Panel("Renderer", {
+	panels.push_back(Panel("Rendering", {
+		{ "Renderer", _rendererContext->GetBridge() }, // Node
 		{ "Shadow", _rendererContext->GetShadowProperties()->GetBridge() } // Node
 	}));
 
@@ -81,6 +78,5 @@ void Application::CreateEditorPanels(std::vector<Panel>& panels)
 		{ "Lighting", _scene->GetBridge() } // Node
 	}));
 }
-
 
 }

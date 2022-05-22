@@ -25,8 +25,6 @@ namespace oryon
 
 		void OnEvent(Event& e);
 
-		void SwitchRenderer(glrenderer::ERendererType rendererType);
-
 		void CreateEditorPanels(std::vector<Panel>& panels);
 
 	private:
