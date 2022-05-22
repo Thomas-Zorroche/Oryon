@@ -7,10 +7,10 @@ int main(int argc, char** argv)
 {
 	oryon::Application app(argc, argv);
 
-	if (!app.getWindow().Init())
+	if (!app.GetWindow().Init())
 		return 1;
 
-	app.run();
+	app.Run();
 
 	return 0;
 }

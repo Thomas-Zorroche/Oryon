@@ -20,6 +20,5 @@ namespace oryon {
 	private:
 		std::string _label;
 		std::vector<Node> _nodes;
-
 	};
 }

@@ -11,9 +11,9 @@
 #include "imgui/IconsMaterialDesignIcons.h"
 #include <imgui/MaterialDesign.inl>
 
-#include "GLRenderer/Renderer.hpp"
 #include "GLRenderer/Scene/Component.hpp"
 #include "GLRenderer/Framebuffer.hpp"
+#include "GLRenderer/Renderer/RendererContext.hpp"
 
 #include <string>
 #include <iostream>
@@ -37,7 +37,10 @@ Editor::Editor()
 
 }
 
-void Editor::initialize(GLFWwindow * window)
+void Editor::Initialize(GLFWwindow* window,
+    const std::shared_ptr<class glrenderer::RendererContext>& rendererContext,
+    const std::shared_ptr<class glrenderer::Scene>& scene,
+    const std::shared_ptr<class glrenderer::Camera>& camera)
 {
     // Initialize ImGui
     IMGUI_CHECKVERSION();
@@ -61,42 +64,25 @@ void Editor::initialize(GLFWwindow * window)
     io.Fonts->AddFontFromMemoryCompressedTTF(MaterialDesign_compressed_data, MaterialDesign_compressed_size, 16, &icons_config, icons_ranges);
 
     // Initialize Renderer Data
-    _cameraController = std::make_shared<CameraController>();
-    glrenderer::Renderer::init();
+    _cameraController = std::make_shared<CameraController>(camera);
 
-    // Create Lights
-    _scene->createLights(1);
+    // Assign Callback
+    // Scene
+    auto ImportModelCallback = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1);
+    SC_ImportModel = ImportModelCallback;
+    auto RenameEntityCallback = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
+    SC_RenameEntity = RenameEntityCallback;
+    auto CreateEntityCallback = std::bind<void>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
+    SC_CreateEntity = CreateEntityCallback;
 
-    // PANELS
-    _panels.push_back(Panel("Render", {
-        { "Shadow", Renderer::getShadowProperties()->getBridge() } // Node
-    }));
-
-    // SCENE
-    {
-        //auto plan = _scene->createEntity("Base Plan");
-        //plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-        //auto& transformPlan = plan.getComponent<glrenderer::TransformComponent>();
-        //transformPlan.scale *= 50;
-
-        //auto cube = _scene->createEntity("Cube");
-        //cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
-        //auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
-        //transformCube.location.y += 2.0f;
-       
-        static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
-        _scene->importModel(modelPath);
-
-        //auto dirLight = std::static_pointer_cast<glrenderer::DirectionalLight>(baseLight);
-        //_scene->setDirectionalLight(dirLight);
-
-        //_entitySelected = entityLight;
-        //onEntitySelectedChanged();
-    }
-
+    // RendererContext
+    auto ResizeRenderBufferCallback = std::bind<void>(&glrenderer::RendererContext::Resize, rendererContext, std::placeholders::_1, std::placeholders::_2);
+    RC_ResizeRenderBuffer = ResizeRenderBufferCallback;
+    auto GetRenderBufferCallback = std::bind<unsigned int>(&glrenderer::RendererContext::GetRenderBuffer, rendererContext);
+    RC_GetRenderBuffer = GetRenderBufferCallback;
 }
 
-void Editor::onUpdate()
+void Editor::OnUpdate()
 {
     _cameraController->onUpdate();
 
@@ -112,9 +98,6 @@ void Editor::onUpdate()
     if (demo)
     {
         ImGui::ShowDemoWindow(&demo);
-        glrenderer::Renderer::clear();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         return;
     }
 
@@ -134,12 +117,12 @@ void Editor::onUpdate()
     renderWorldOutliner();
     renderMenuBar();
     renderPerformancePanel();
-    renderWorldSettingsPanel();
     
     ImGui::End();
+}
 
-    renderScene();
-
+void Editor::Draw()
+{
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -156,10 +139,7 @@ void Editor::renderMenuBar()
                 {
                     static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
                     //static const std::string modelPath = "C:/dev/gltf-models/New Sponza/Base/NewSponza_Main_Blender_glTF.gltf";
-                    if (!_scene->importModel(modelPath))
-                        std::cout << "Cannot open " << modelPath << std::endl;
-                    else
-                        std::cout << "Import " << modelPath << " into the scene" << std::endl;
+                    SC_ImportModel(modelPath);
                 }
                 ImGui::EndMenu();
             }
@@ -171,37 +151,18 @@ void Editor::renderMenuBar()
             if (ImGui::BeginMenu("Mesh"))
             {
                 if (ImGui::MenuItem("Plan"))
-                {
-                    // TODO replace by
-                    // _scene->AddShape(glrenderer::MeshShape::Plan);
-                    auto& plan = _scene->createEntity("Plan");
-                    plan.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Plan));
-                }
+                    SC_CreateEntity(EBaseEntityType::Plan);
                 if (ImGui::MenuItem("Cube"))
-                {
-                    auto& cube = _scene->createEntity("Cube");
-                    cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
-                }
+                    SC_CreateEntity(EBaseEntityType::Cube);
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Light"))
             {
                 if (ImGui::MenuItem("Point"))
-                {
-                    auto& pointLight = _scene->createEntity("Point Light");
-                    pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Point));
-                    auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
-                    transformLight.location = { 0.0, 0.0, 0.0 };
-                }
+                    SC_CreateEntity(EBaseEntityType::PointLight);
                 if (ImGui::MenuItem("Directional"))
-                {
-                    auto& pointLight = _scene->createEntity("Directional Light");
-                    pointLight.addComponent<glrenderer::LightComponent>(glrenderer::BaseLight::createLight(glrenderer::LightType::Directional));
-                    auto& transformLight = pointLight.getComponent<glrenderer::TransformComponent>();
-                    transformLight.location = { 0.0, 0.0, 0.0 };
-                    transformLight.rotation = { 1.0, 1.0, 1.0 };
-                }
+                    SC_CreateEntity(EBaseEntityType::DirectionalLight);
                 ImGui::EndMenu();
             }
 
@@ -211,27 +172,22 @@ void Editor::renderMenuBar()
     }
 }
 
-void Editor::renderScene()
-{
-    _scene->renderScene(_cameraController->getCamera(), _entitySelected);
-}
-
 void Editor::renderWorldOutliner()
 {
-    if (ImGui::Begin("World Outliner"))
-    {
-        _scene->forEachEntity([this](glrenderer::Entity entity)
-        {
-            std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
-
-            if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
-            {
-                _entitySelected = entity;
-                onEntitySelectedChanged();
-            }
-        });
-    }
-    ImGui::End(); // Settings
+    //if (ImGui::Begin("World Outliner"))
+    //{
+    //    _scene->forEachEntity([this](glrenderer::Entity entity)
+    //    {
+    //        std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
+    //
+    //        if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
+    //        {
+    //            _entitySelected = entity;
+    //            onEntitySelectedChanged();
+    //        }
+    //    });
+    //}
+    //ImGui::End(); // Settings
 }
 
 void Editor::renderObjectPanel()
@@ -246,9 +202,7 @@ void Editor::renderObjectPanel()
         ImGui::SameLine();
         if (ImGui::Button("Rename"))
         {
-            std::string& labelEntitySelected = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
-            labelEntitySelected = _bufferEntitySelectedName;
-            _scene->makeUniqueLabel(labelEntitySelected);
+            SC_RenameEntity(_entitySelected, _bufferEntitySelectedName);
         }
         
         // Transform
@@ -298,20 +252,6 @@ void Editor::renderMaterialPanel()
 
 }
 
-void Editor::renderWorldSettingsPanel()
-{
-    if (ImGui::Begin("World Settings"))
-    {
-        static int nPointLights = _scene->getPointLightNum();
-        if (ImGui::SliderInt("Point Lights", &nPointLights, 0, Renderer::getMaxNumTotalLights()))
-        {
-            _scene->updatePointLights(nPointLights);
-        }
-
-    }
-    ImGui::End(); // World Settings
-}
-
 void Editor::renderLightPanel()
 {
     if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::LightComponent>())
@@ -336,58 +276,58 @@ void Editor::renderLightPanel()
             ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
         }
 
-        if (_scene->getDirectionalLight() && light->isDirectionalLight())
-        {
-            ImGui::DragFloat("Size", &_scene->getDirectionalLight()->getSize(), 0.001f, 0.001f, 25.0f);
-            ImGui::DragFloat("Far Plane Frustum", &_scene->getDirectionalLight()->getFarPlane(), 1.0f, 5.0f, 500.0f);
-            ImGui::DragFloat("Near Plane Frustum", &_scene->getDirectionalLight()->getNearPlane(), 0.1f, -500.0f, 500.0f);
-            //ImGui::DragFloat("Frustum Size", &_scene->getDirectionalLight()->getFrustumSize(), 0.1f,-200.0f, 200.0f);
-            ImGui::DragFloat("Offset Position", &_scene->getDirectionalLight()->getOffsetPosition(), 0.1f, -15.0f, 15.0f);
-
-            static int textureSizeId = 0;
-            if (ImGui::Combo("##Texture Size", &(int&)textureSizeId, "1024\0 2048\0 4096\0\0"))
-            {
-                switch (textureSizeId)
-                {
-                case 0: Renderer::getShadowMap()->resize(1024, 1024); break;
-                case 1: Renderer::getShadowMap()->resize(2048, 2048); break;
-                case 2: Renderer::getShadowMap()->resize(4096, 4096); break;
-                }
-            }
-
-            //static int blockerSearchSamples = 0;
-            //if (ImGui::Combo("##Blocker Search Samples", &(int&)blockerSearchSamples, "32\0 64\0 128\0\0"))
-            //{
-            //    switch (blockerSearchSamples)
-            //    {
-            //    case 0: glrenderer::Renderer::getShadowSettings()->setBlockerSearchSamples(32); break;
-            //    case 1: xxx->setBlockerSearchSamples(64); break;
-            //    case 2: xxx->setBlockerSearchSamples(128); break;
-            //    }
-            //}
-
-            //static int PCFFilteringSamples = 0;
-            //if (ImGui::Combo("##Blocker Search Samples", &(int&)PCFFilteringSamples, "32\0 64\0 128\0\0"))
-            //{
-            //    switch (PCFFilteringSamples)
-            //    {
-            //    case 0: xxx->setPCFFilteringSamples(32);  break;
-            //    case 1: xxx->setPCFFilteringSamples(64);  break;
-            //    case 2: xxx->setPCFFilteringSamples(128); break;
-            //    }
-            //}
-
-            float viewerWidth = ImGui::GetWindowContentRegionWidth();
-            ImGui::BeginChild("DepthMap Viewer", ImVec2(viewerWidth, viewerWidth));
-            ImVec2 wsize = ImGui::GetContentRegionAvail();
-            ImGui::Image(
-                (ImTextureID)Renderer::getShadowMap()->getTextureId(),
-                ImVec2(viewerWidth, viewerWidth),
-                ImVec2(0, 1),
-                ImVec2(1, 0)
-            );
-            ImGui::EndChild();
-        }
+        //if (_scene->getDirectionalLight() && light->isDirectionalLight())
+        //{
+        //    ImGui::DragFloat("Size", &_scene->getDirectionalLight()->getSize(), 0.001f, 0.001f, 25.0f);
+        //    ImGui::DragFloat("Far Plane Frustum", &_scene->getDirectionalLight()->getFarPlane(), 1.0f, 5.0f, 500.0f);
+        //    ImGui::DragFloat("Near Plane Frustum", &_scene->getDirectionalLight()->getNearPlane(), 0.1f, -500.0f, 500.0f);
+        //    //ImGui::DragFloat("Frustum Size", &_scene->getDirectionalLight()->getFrustumSize(), 0.1f,-200.0f, 200.0f);
+        //    ImGui::DragFloat("Offset Position", &_scene->getDirectionalLight()->getOffsetPosition(), 0.1f, -15.0f, 15.0f);
+        //
+        //    static int textureSizeId = 0;
+        //    if (ImGui::Combo("##Texture Size", &(int&)textureSizeId, "1024\0 2048\0 4096\0\0"))
+        //    {
+        //        switch (textureSizeId)
+        //        {
+        //        case 0: Renderer::getShadowMap()->resize(1024, 1024); break;
+        //        case 1: Renderer::getShadowMap()->resize(2048, 2048); break;
+        //        case 2: Renderer::getShadowMap()->resize(4096, 4096); break;
+        //        }
+        //    }
+        //
+        //    //static int blockerSearchSamples = 0;
+        //    //if (ImGui::Combo("##Blocker Search Samples", &(int&)blockerSearchSamples, "32\0 64\0 128\0\0"))
+        //    //{
+        //    //    switch (blockerSearchSamples)
+        //    //    {
+        //    //    case 0: glrenderer::Renderer::getShadowSettings()->setBlockerSearchSamples(32); break;
+        //    //    case 1: xxx->setBlockerSearchSamples(64); break;
+        //    //    case 2: xxx->setBlockerSearchSamples(128); break;
+        //    //    }
+        //    //}
+        //
+        //    //static int PCFFilteringSamples = 0;
+        //    //if (ImGui::Combo("##Blocker Search Samples", &(int&)PCFFilteringSamples, "32\0 64\0 128\0\0"))
+        //    //{
+        //    //    switch (PCFFilteringSamples)
+        //    //    {
+        //    //    case 0: xxx->setPCFFilteringSamples(32);  break;
+        //    //    case 1: xxx->setPCFFilteringSamples(64);  break;
+        //    //    case 2: xxx->setPCFFilteringSamples(128); break;
+        //    //    }
+        //    //}
+        //
+        //    float viewerWidth = ImGui::GetWindowContentRegionWidth();
+        //    ImGui::BeginChild("DepthMap Viewer", ImVec2(viewerWidth, viewerWidth));
+        //    ImVec2 wsize = ImGui::GetContentRegionAvail();
+        //    ImGui::Image(
+        //        (ImTextureID)Renderer::getShadowMap()->getTextureId(),
+        //        ImVec2(viewerWidth, viewerWidth),
+        //        ImVec2(0, 1),
+        //        ImVec2(1, 0)
+        //    );
+        //    ImGui::EndChild();
+        //}
 
     }
     ImGui::End(); // Light
@@ -402,15 +342,15 @@ void Editor::renderViewer3DPanel()
         {
             _viewportWidth = wsize.x;
             _viewportHeight = wsize.y;
-            Renderer::getRenderBuffer()->resize(_viewportWidth, _viewportHeight);
+
+            RC_ResizeRenderBuffer(_viewportWidth, _viewportHeight);
 
             float ratio = _viewportWidth / _viewportHeight;
             auto& camera = _cameraController->getCamera();
             camera->updateAspectRatio(ratio);
         }
 
-        ImGui::Image((ImTextureID)Renderer::getRenderBuffer()->getTextureId(), wsize, ImVec2(0, 1), ImVec2(1, 0));
-
+        ImGui::Image((ImTextureID)RC_GetRenderBuffer(), wsize, ImVec2(0, 1), ImVec2(1, 0));
 
         if (_entitySelected && _guizmoType != -1)
         {
@@ -513,7 +453,7 @@ void Editor::onEntitySelectedChanged()
     _bufferEntitySelectedName = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
 }
 
-void Editor::onEvent(Event& e)
+void Editor::OnEvent(Event& e)
 {
     KeyEvent* keyEvent = e.isKeyEvent();
     if (keyEvent)
@@ -545,14 +485,12 @@ void Editor::nextGuizmoType()
     }
 }
 
-void Editor::free()
+void Editor::Free()
 {
     //Shutdown ImGUI
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-
-    glrenderer::Renderer::free();
 }
 
 }

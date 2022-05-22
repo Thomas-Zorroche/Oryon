@@ -7,6 +7,9 @@
 
 #include "Events/Event.hpp"
 
+#include "GLRenderer/Renderer/RendererContext.hpp"
+#include "GLRenderer/Scene/Scene.hpp"
+
 namespace oryon
 {
 
@@ -16,16 +19,26 @@ namespace oryon
 
 		Application(int argc, char** argv);
 
-		Window& getWindow() { return * _window; }
+		Window& GetWindow() { return * _window; }
 
-		void run();
+		void Run();
 
-		void onEvent(Event& e);
+		void OnEvent(Event& e);
+
+		void SwitchRenderer(glrenderer::ERendererType rendererType);
+
+		void CreateEditorPanels(std::vector<Panel>& panels);
 
 	private:
 		std::unique_ptr<Window> _window = nullptr;
+
 		std::unique_ptr<Editor> _editor = nullptr;
 
+		std::shared_ptr<glrenderer::Scene> _scene = nullptr;
+
+		std::shared_ptr<glrenderer::RendererContext> _rendererContext = nullptr;
+
+		std::shared_ptr<glrenderer::Camera> _camera = nullptr;
 	};
 
 }

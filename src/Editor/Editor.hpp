@@ -8,6 +8,7 @@
 #include "GLRenderer/Framebuffer.hpp"
 #include <memory>
 #include <vector>
+#include <functional>
 
 #include "../Events/Event.hpp"
 
@@ -20,57 +21,80 @@
 
 
 
+
 namespace oryon
 {
 
-	class Editor
-	{
-	public:
-		Editor();
+class Editor
+{
+public:
+	Editor();
 
-		void initialize(GLFWwindow* window);
+	void Initialize(GLFWwindow* window, 
+		const std::shared_ptr<class glrenderer::RendererContext>& rendererContext, 
+		const std::shared_ptr<class glrenderer::Scene>& scene,
+		const std::shared_ptr<class glrenderer::Camera>& camera);
 
-		void onUpdate();
+	void OnUpdate();
 
-		void free();
+	void Draw();
 
-		void onEvent(Event& e);
+	void Free();
 
-	private:
-		void renderViewer3DPanel();
-		void renderWorldOutliner();
-		void renderObjectPanel();
-		void renderLightPanel();
-		void renderMaterialPanel();
-		void renderPerformancePanel();
-		void renderWorldSettingsPanel();
+	void OnEvent(Event& e);
 
-		void renderMenuBar();
+	std::vector<Panel>& GetPanels() { return _panels; }
 
-		void renderScene();
+	const glrenderer::Entity& GetEntitySelected() const { return _entitySelected; }
 
-		void setupDockspace();
+public:
+// Events
+	// Scene
+	using ImportModelCallback = std::function<bool(const std::string&)>;
+	using RenameEntityCallback = std::function<void(glrenderer::Entity& entity, const std::string& name)>;
+	using CreateEntityCallback = std::function<void(glrenderer::EBaseEntityType)>;
+	ImportModelCallback SC_ImportModel;
+	RenameEntityCallback SC_RenameEntity;
+	CreateEntityCallback SC_CreateEntity;
 
-		void onEntitySelectedChanged();
+	// RendererContext
+	using ResizeRenderBufferCallback = std::function<void(uint32_t, uint32_t)>;
+	using GetRenderBufferCallback = std::function<unsigned int()>;
+	ResizeRenderBufferCallback RC_ResizeRenderBuffer;
+	GetRenderBufferCallback RC_GetRenderBuffer;
+// End of events
 
-		void nextGuizmoType();
+private:
+	void renderViewer3DPanel();
+	void renderWorldOutliner();
+	void renderObjectPanel();
+	void renderLightPanel();
+	void renderMaterialPanel();
+	void renderPerformancePanel();
 
-	private:
-		bool _dockspaceOpen = true;
+	void renderMenuBar();
+
+	void setupDockspace();
+
+	void onEntitySelectedChanged();
+
+	void nextGuizmoType();
+
+private:
+	bool _dockspaceOpen = true;
 	
-		float _viewportWidth = 500.0f;
-		float _viewportHeight = 300.0f;
+	float _viewportWidth = 500.0f;
+	float _viewportHeight = 300.0f;
 
-		std::shared_ptr<glrenderer::Scene> _scene = std::make_shared<glrenderer::Scene>();
-		std::shared_ptr<CameraController> _cameraController;
+	std::shared_ptr<CameraController> _cameraController;
 
-		glrenderer::Entity _entitySelected;
-		std::string _bufferEntitySelectedName = "";
+	glrenderer::Entity _entitySelected;
 
-		int _guizmoType = -1;
+	std::string _bufferEntitySelectedName = "";
 
-		std::vector<Panel> _panels;
-	};
+	int _guizmoType = -1;
 
+	std::vector<Panel> _panels;
+};
 
 }
