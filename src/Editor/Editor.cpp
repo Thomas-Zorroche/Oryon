@@ -68,7 +68,7 @@ void Editor::Initialize(GLFWwindow* window,
 
     // Assign Callback
     // Scene
-    SC_ImportModel = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1);
+    SC_ImportModel = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1, std::placeholders::_2);
     SC_RenameEntity = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
     SC_CreateEntity = std::bind<void>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
 
@@ -77,7 +77,7 @@ void Editor::Initialize(GLFWwindow* window,
     _renderBufferTextureID = rendererContext->GetRenderBufferTextureID();
 }
 
-void Editor::OnUpdate()
+void Editor::OnUpdate(std::shared_ptr<glrenderer::Scene>& scene)
 {
     _cameraController->onUpdate();
 
@@ -109,7 +109,7 @@ void Editor::OnUpdate()
     renderMaterialPanel();
 
     renderViewer3DPanel();
-    renderWorldOutliner();
+    renderWorldOutliner(scene);
     renderMenuBar();
     renderPerformancePanel();
     
@@ -133,8 +133,8 @@ void Editor::renderMenuBar()
                 if (ImGui::MenuItem("glTF"))
                 {
                     static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
-                    //static const std::string modelPath = "C:/dev/gltf-models/New Sponza/Base/NewSponza_Main_Blender_glTF.gltf";
-                    SC_ImportModel(modelPath);
+                    _groupLabels.push_back("Sponza");
+                    SC_ImportModel(modelPath, _groupLabels.size() - 1);
                 }
                 ImGui::EndMenu();
             }
@@ -167,22 +167,28 @@ void Editor::renderMenuBar()
     }
 }
 
-void Editor::renderWorldOutliner()
+
+
+
+void Editor::renderWorldOutliner(std::shared_ptr<glrenderer::Scene>& scene)
 {
-    //if (ImGui::Begin("World Outliner"))
-    //{
-    //    _scene->forEachEntity([this](glrenderer::Entity entity)
-    //    {
-    //        std::string& label = entity.getComponent<glrenderer::LabelComponent>().label;
-    //
-    //        if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
-    //        {
-    //            _entitySelected = entity;
-    //            onEntitySelectedChanged();
-    //        }
-    //    });
-    //}
-    //ImGui::End(); // Settings
+    if (ImGui::Begin("World Outliner"))
+    {
+        scene->forEachEntity([this](glrenderer::Entity entity)
+        {
+            const auto& component = entity.getComponent<glrenderer::LabelComponent>();
+            const std::string& label = component.label;
+            const uint32_t& groupId = component.groupId;
+
+            if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
+            {
+                _entitySelected = entity;
+                onEntitySelectedChanged();
+            }
+
+        });
+    }
+    ImGui::End(); // World Outliner
 }
 
 void Editor::renderObjectPanel()
@@ -347,35 +353,35 @@ void Editor::renderViewer3DPanel()
 
         ImGui::Image((ImTextureID)_renderBufferTextureID, wsize, ImVec2(0, 1), ImVec2(1, 0));
 
-        //if (_entitySelected && _guizmoType != -1)
-        //{
-        //    ImGuizmo::SetOrthographic(false);
-        //    ImGuizmo::SetDrawlist();
-        //    float windowWidth = (float)ImGui::GetWindowWidth();
-        //    float windowHeight = (float)ImGui::GetWindowHeight();
-        //    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
-        //
-        //    const glm::mat4& view = _cameraController->getCamera()->getViewMatrix();
-        //    const glm::mat4& projection = _cameraController->getCamera()->getProjectionMatrix();
-        //
-        //    auto& transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
-        //    glm::mat4 transform = transformComponent.getModelMatrix();
-        //
-        //    ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
-        //        (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
-        //
-        //    if (ImGuizmo::IsUsing())
-        //    {
-        //        glm::vec3 translation, rotation, scale;
-        //        
-        //        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),
-        //            glm::value_ptr(rotation), glm::value_ptr(scale));
-        //        
-        //        transformComponent.location = translation; 
-        //        transformComponent.rotation = rotation;
-        //        transformComponent.scale = scale; 
-        //    }
-        //}
+        if (_entitySelected && _guizmoType != -1)
+        {
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::SetDrawlist();
+            float windowWidth = (float)ImGui::GetWindowWidth();
+            float windowHeight = (float)ImGui::GetWindowHeight();
+            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+        
+            const glm::mat4& view = _cameraController->getCamera()->getViewMatrix();
+            const glm::mat4& projection = _cameraController->getCamera()->getProjectionMatrix();
+        
+            auto& transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
+            glm::mat4 transform = transformComponent.getModelMatrix();
+        
+            ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
+                (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+        
+            if (ImGuizmo::IsUsing())
+            {
+                glm::vec3 translation, rotation, scale;
+                
+                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),
+                    glm::value_ptr(rotation), glm::value_ptr(scale));
+                
+                transformComponent.location = translation; 
+                transformComponent.rotation = rotation;
+                transformComponent.scale = scale; 
+            }
+        }
 
     }
     ImGui::End();

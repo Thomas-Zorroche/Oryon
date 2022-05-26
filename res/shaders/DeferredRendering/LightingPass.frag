@@ -31,7 +31,7 @@ struct PointLight
 
     vec4 specular;
 };
-#define MAX_NUM_TOTAL_LIGHTS 200
+#define MAX_NUM_TOTAL_LIGHTS 1000
 layout (std140) uniform Lights
 {
     PointLight uPointLights[MAX_NUM_TOTAL_LIGHTS];

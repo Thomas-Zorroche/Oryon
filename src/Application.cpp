@@ -27,8 +27,8 @@ void Application::Run()
 	Input::setWindow(_window->GetNativeWindow());
 	_editor->Initialize(_window->GetNativeWindow(), _rendererContext, _scene, _camera);
 
-	static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
-	_scene->ImportModel(modelPath);
+	//static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
+	//_scene->ImportModel(modelPath);
 	//_scene->CreateBaseEntity(glrenderer::EBaseEntityType::PointLight);
 
 	// Default Cube
@@ -47,7 +47,7 @@ void Application::Run()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		_editor->OnUpdate();
+		_editor->OnUpdate(_scene);
 		
 		_rendererContext->RenderScene(_camera, _scene->GetScene(), _editor->GetEntitySelected());
 

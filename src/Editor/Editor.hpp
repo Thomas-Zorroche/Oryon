@@ -35,7 +35,7 @@ public:
 		const std::shared_ptr<class glrenderer::Scene>& scene,
 		const std::shared_ptr<class glrenderer::Camera>& camera);
 
-	void OnUpdate();
+	void OnUpdate(std::shared_ptr<glrenderer::Scene>& scene);
 
 	void Draw();
 
@@ -50,8 +50,8 @@ public:
 public:
 // Events
 	// Scene
-	using ImportModelCallback = std::function<bool(const std::string&)>;
-	using RenameEntityCallback = std::function<void(glrenderer::Entity& entity, const std::string& name)>;
+	using ImportModelCallback = std::function<bool(const std::string&, const uint32_t&)>;
+	using RenameEntityCallback = std::function<void(glrenderer::Entity&, const std::string&)>;
 	using CreateEntityCallback = std::function<void(glrenderer::EBaseEntityType)>;
 	ImportModelCallback SC_ImportModel;
 	RenameEntityCallback SC_RenameEntity;
@@ -65,7 +65,7 @@ public:
 
 private:
 	void renderViewer3DPanel();
-	void renderWorldOutliner();
+	void renderWorldOutliner(std::shared_ptr<glrenderer::Scene>& scene);
 	void renderObjectPanel();
 	void renderLightPanel();
 	void renderMaterialPanel();
@@ -96,6 +96,8 @@ private:
 	std::vector<Panel> _panels;
 
 	uint32_t _renderBufferTextureID = 0;
+
+	std::vector<std::string> _groupLabels = { "default" };
 };
 
 }
