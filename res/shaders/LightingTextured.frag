@@ -82,7 +82,7 @@ void main()
     vec3 viewDir = normalize(uCameraPos - vFragPos);
     
     //float shadow = ComputeShadow(vFragPosLightSpace, normal);
-    float shadow = 0.0f;
+    float shadow = 0.0;
     
     vec3 fColor = ComputeDirectionalLight(directionalLight, normal, viewDir, shadow, baseColor.rgb);
     for (int i = 0; i < MAX_NUM_TOTAL_LIGHTS; i++)

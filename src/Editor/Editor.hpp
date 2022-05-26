@@ -59,9 +59,8 @@ public:
 
 	// RendererContext
 	using ResizeRenderBufferCallback = std::function<void(uint32_t, uint32_t)>;
-	using GetRenderBufferCallback = std::function<unsigned int()>;
+	using GetViewportBufferCallback = std::function<unsigned int()>;
 	ResizeRenderBufferCallback RC_ResizeRenderBuffer;
-	GetRenderBufferCallback RC_GetRenderBuffer;
 // End of events
 
 private:
@@ -95,6 +94,8 @@ private:
 	int _guizmoType = -1;
 
 	std::vector<Panel> _panels;
+
+	uint32_t _renderBufferTextureID = 0;
 };
 
 }

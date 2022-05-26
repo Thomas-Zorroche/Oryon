@@ -68,18 +68,13 @@ void Editor::Initialize(GLFWwindow* window,
 
     // Assign Callback
     // Scene
-    auto ImportModelCallback = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1);
-    SC_ImportModel = ImportModelCallback;
-    auto RenameEntityCallback = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
-    SC_RenameEntity = RenameEntityCallback;
-    auto CreateEntityCallback = std::bind<void>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
-    SC_CreateEntity = CreateEntityCallback;
+    SC_ImportModel = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1);
+    SC_RenameEntity = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
+    SC_CreateEntity = std::bind<void>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
 
     // RendererContext
-    auto ResizeRenderBufferCallback = std::bind<void>(&glrenderer::RendererContext::Resize, rendererContext, std::placeholders::_1, std::placeholders::_2);
-    RC_ResizeRenderBuffer = ResizeRenderBufferCallback;
-    auto GetRenderBufferCallback = std::bind<unsigned int>(&glrenderer::RendererContext::GetRenderBuffer, rendererContext);
-    RC_GetRenderBuffer = GetRenderBufferCallback;
+    RC_ResizeRenderBuffer = std::bind<void>(&glrenderer::RendererContext::Resize, rendererContext, std::placeholders::_1, std::placeholders::_2);
+    _renderBufferTextureID = rendererContext->GetRenderBufferTextureID();
 }
 
 void Editor::OnUpdate()
@@ -350,37 +345,37 @@ void Editor::renderViewer3DPanel()
             camera->updateAspectRatio(ratio);
         }
 
-        ImGui::Image((ImTextureID)RC_GetRenderBuffer(), wsize, ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image((ImTextureID)_renderBufferTextureID, wsize, ImVec2(0, 1), ImVec2(1, 0));
 
-        if (_entitySelected && _guizmoType != -1)
-        {
-            ImGuizmo::SetOrthographic(false);
-            ImGuizmo::SetDrawlist();
-            float windowWidth = (float)ImGui::GetWindowWidth();
-            float windowHeight = (float)ImGui::GetWindowHeight();
-            ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
-
-            const glm::mat4& view = _cameraController->getCamera()->getViewMatrix();
-            const glm::mat4& projection = _cameraController->getCamera()->getProjectionMatrix();
-
-            auto& transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
-            glm::mat4 transform = transformComponent.getModelMatrix();
-
-            ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
-                (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
-
-            if (ImGuizmo::IsUsing())
-            {
-                glm::vec3 translation, rotation, scale;
-                
-                ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),
-                    glm::value_ptr(rotation), glm::value_ptr(scale));
-                
-                transformComponent.location = translation; 
-                transformComponent.rotation = rotation;
-                transformComponent.scale = scale; 
-            }
-        }
+        //if (_entitySelected && _guizmoType != -1)
+        //{
+        //    ImGuizmo::SetOrthographic(false);
+        //    ImGuizmo::SetDrawlist();
+        //    float windowWidth = (float)ImGui::GetWindowWidth();
+        //    float windowHeight = (float)ImGui::GetWindowHeight();
+        //    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+        //
+        //    const glm::mat4& view = _cameraController->getCamera()->getViewMatrix();
+        //    const glm::mat4& projection = _cameraController->getCamera()->getProjectionMatrix();
+        //
+        //    auto& transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
+        //    glm::mat4 transform = transformComponent.getModelMatrix();
+        //
+        //    ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
+        //        (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+        //
+        //    if (ImGuizmo::IsUsing())
+        //    {
+        //        glm::vec3 translation, rotation, scale;
+        //        
+        //        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),
+        //            glm::value_ptr(rotation), glm::value_ptr(scale));
+        //        
+        //        transformComponent.location = translation; 
+        //        transformComponent.rotation = rotation;
+        //        transformComponent.scale = scale; 
+        //    }
+        //}
 
     }
     ImGui::End();

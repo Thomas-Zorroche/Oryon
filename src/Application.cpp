@@ -23,8 +23,6 @@ void Application::Run()
 
 	_rendererContext->SetEvents(_scene);
 
-	float deltaTime = 0.0f;	// Time between current frame and last frame
-	float lastFrame = 0.0f; // Time of last frame
 
 	Input::setWindow(_window->GetNativeWindow());
 	_editor->Initialize(_window->GetNativeWindow(), _rendererContext, _scene, _camera);
@@ -41,12 +39,16 @@ void Application::Run()
 
 	CreateEditorPanels(_editor->GetPanels());
 
+	float deltaTime = 0.0f;	// Time between current frame and last frame
+	float lastFrame = 0.0f; // Time of last frame
 	while (!glfwWindowShouldClose(_window->GetNativeWindow()))
 	{
-		float currentFrame = glfwGetTime();
+		float currentFrame = static_cast<float>(glfwGetTime());
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
 
 		_editor->OnUpdate();
-
+		
 		_rendererContext->RenderScene(_camera, _scene->GetScene(), _editor->GetEntitySelected());
 
 		_editor->Draw();
