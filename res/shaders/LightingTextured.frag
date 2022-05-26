@@ -61,14 +61,10 @@ float ComputeShadow(vec4 fragPosLightSpace, vec3 normal);
 // Constants
 const float GAMMA = 2.2;
 const float INV_GAMMA = 1. / GAMMA;
-
-vec3 LINEARtoSRGB(vec3 color) 
-{ 
+vec3 LINEARtoSRGB(vec3 color) { 
     return pow(color, vec3(INV_GAMMA)); 
 }
-
-vec4 SRGBtoLINEAR(vec4 srgbIn)
-{
+vec4 SRGBtoLINEAR(vec4 srgbIn) {
     return vec4(pow(srgbIn.xyz, vec3(GAMMA)), srgbIn.w);
 }
 
@@ -84,7 +80,8 @@ void main()
     //float shadow = ComputeShadow(vFragPosLightSpace, normal);
     float shadow = 0.0;
     
-    vec3 fColor = ComputeDirectionalLight(directionalLight, normal, viewDir, shadow, baseColor.rgb);
+    //vec3 fColor = ComputeDirectionalLight(directionalLight, normal, viewDir, shadow, baseColor.rgb);
+    vec3 fColor = vec3(0, 0, 0);
     for (int i = 0; i < MAX_NUM_TOTAL_LIGHTS; i++)
     {
         if (i == uNumPointLights)
@@ -92,7 +89,6 @@ void main()
 
         fColor += ComputePointLight(uPointLights[i], normal, vFragPos, viewDir, shadow, baseColor.rgb);
     }
-    
     
     fFragColor = vec4(LINEARtoSRGB(fColor.rgb), 1.0);
 }

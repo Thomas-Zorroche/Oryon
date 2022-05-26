@@ -57,7 +57,7 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     
     // Blinn Spec
     vec3 halfwayDir = normalize(lightDirection + viewDir);  
-    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), 5.0/*uShininess*/);
+    float specularStrength = pow(max(dot(normal, halfwayDir), 0.0), 450.0/*uShininess*/);
 
     float distance = length(light.position - fragPos);
 
@@ -92,12 +92,22 @@ vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, 
     return vec3(ambient + (1.0 - shadow) * (diffuse + specular));
 }
 
+// Constants
+const float GAMMA = 2.2;
+const float INV_GAMMA = 1. / GAMMA;
+vec3 LINEARtoSRGB(vec3 color) { 
+    return pow(color, vec3(INV_GAMMA)); 
+}
+vec4 SRGBtoLINEAR(vec4 srgbIn) {
+    return vec4(pow(srgbIn.xyz, vec3(GAMMA)), srgbIn.w);
+}
+
 void main()
 {             
     // retrieve data from gbuffer
     vec3 FragPos = texture(gPosition, vTexCoords).rgb;
     vec3 Normal = texture(gNormal, vTexCoords).rgb;
-    vec3 Diffuse = texture(gAlbedoSpec, vTexCoords).rgb;
+    vec3 Diffuse = SRGBtoLINEAR(texture(gAlbedoSpec, vTexCoords)).rgb;
     float Specular = texture(gAlbedoSpec, vTexCoords).a;
     vec3 ViewDir = normalize(uCameraPos - FragPos);
 
@@ -112,6 +122,6 @@ void main()
         fColor += ComputePointLight(uPointLights[i], Normal, FragPos, ViewDir, shadow, Diffuse);
     }
 
-    FragColor = vec4(fColor, 1.0);
+    FragColor = vec4(LINEARtoSRGB(fColor.rgb), 1.0);
 }
 
