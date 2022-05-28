@@ -73,6 +73,8 @@ void Editor::Initialize(GLFWwindow* window,
     SC_RenameEntity = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
     SC_CreateEntity = std::bind<glrenderer::Entity>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
     SC_UpdateLight = std::bind<void>(&glrenderer::Scene::UpdateLights, scene, std::placeholders::_1);
+    SC_Duplicate = std::bind<glrenderer::Entity>(&glrenderer::Scene::Duplicate, scene, std::placeholders::_1);
+
 
     // RendererContext
     RC_ResizeRenderBuffer = std::bind<void>(&glrenderer::RendererContext::Resize, rendererContext, std::placeholders::_1, std::placeholders::_2);
@@ -81,7 +83,8 @@ void Editor::Initialize(GLFWwindow* window,
 
 void Editor::OnUpdate(std::shared_ptr<glrenderer::Scene>& scene)
 {
-    _cameraController->onUpdate();
+    if (_canDuplicate)
+        _cameraController->onUpdate();
 
     //New ImGui Frame
     ImGuiIO& io = ImGui::GetIO();
@@ -433,9 +436,24 @@ void Editor::renderViewer3DPanel()
         
             ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), 
                 (ImGuizmo::OPERATION)_guizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform));
+
+            if (&_canDuplicate && !Input::isKeyPressed(Key::LeftAlt))
+            {
+                _canDuplicate = true;
+            }
         
             if (ImGuizmo::IsUsing())
             {
+                if (_canDuplicate && Input::isKeyPressed(Key::LeftAlt) && _guizmoType == ImGuizmo::OPERATION::TRANSLATE)
+                {
+                    _canDuplicate = false;
+
+                    _entitySelected = SC_Duplicate(_entitySelected);
+                    onEntitySelectedChanged();
+
+                    transformComponent = _entitySelected.getComponent<glrenderer::TransformComponent>();
+                }
+
                 glm::vec3 translation, rotation, scale;
                 
                 ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform), glm::value_ptr(translation),

@@ -54,10 +54,12 @@ public:
 	using RenameEntityCallback = std::function<void(glrenderer::Entity&, const std::string&)>;
 	using CreateEntityCallback = std::function<glrenderer::Entity(glrenderer::EBaseEntityType)>;
 	using UpdateLightCallback = std::function<void(const std::vector<std::shared_ptr<glrenderer::PointLight>>&)>;
+	using DuplicateCallback = std::function<glrenderer::Entity(glrenderer::Entity)>;
 	ImportModelCallback SC_ImportModel;
 	RenameEntityCallback SC_RenameEntity;
 	CreateEntityCallback SC_CreateEntity;
 	UpdateLightCallback SC_UpdateLight;
+	DuplicateCallback SC_Duplicate;
 
 	// RendererContext
 	using ResizeRenderBufferCallback = std::function<void(uint32_t, uint32_t)>;
@@ -106,6 +108,8 @@ private:
 	uint32_t _renderBufferTextureID = 0;
 
 	std::vector<std::string> _groupLabels = { "default" };
+
+	bool _canDuplicate = true;
 };
 
 }
