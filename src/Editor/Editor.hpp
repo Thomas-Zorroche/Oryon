@@ -52,10 +52,12 @@ public:
 	// Scene
 	using ImportModelCallback = std::function<bool(const std::string&, const uint32_t&)>;
 	using RenameEntityCallback = std::function<void(glrenderer::Entity&, const std::string&)>;
-	using CreateEntityCallback = std::function<void(glrenderer::EBaseEntityType)>;
+	using CreateEntityCallback = std::function<glrenderer::Entity(glrenderer::EBaseEntityType)>;
+	using UpdateLightCallback = std::function<void(const std::vector<std::shared_ptr<glrenderer::PointLight>>&)>;
 	ImportModelCallback SC_ImportModel;
 	RenameEntityCallback SC_RenameEntity;
 	CreateEntityCallback SC_CreateEntity;
+	UpdateLightCallback SC_UpdateLight;
 
 	// RendererContext
 	using ResizeRenderBufferCallback = std::function<void(uint32_t, uint32_t)>;
@@ -70,6 +72,7 @@ private:
 	void renderLightPanel();
 	void renderMaterialPanel();
 	void renderPerformancePanel();
+	void renderParticuleSystemPanel(std::shared_ptr<glrenderer::Scene>& scene);
 
 	void renderMenuBar();
 
@@ -89,11 +92,16 @@ private:
 
 	glrenderer::Entity _entitySelected;
 
+	std::shared_ptr<glrenderer::PointLight> _pointLightSelected = nullptr;
+
 	std::string _bufferEntitySelectedName = "";
 
-	int _guizmoType = -1;
+	int _guizmoType = 0;
 
-	std::vector<Panel> _panels;
+	std::vector<Panel> _panels = {};
+	Panel _particuleSystemPanel;
+
+	int _particuleSystemSelectedID = -1;
 
 	uint32_t _renderBufferTextureID = 0;
 

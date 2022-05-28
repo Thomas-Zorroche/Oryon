@@ -76,9 +76,9 @@ void Application::CreateEditorPanels(std::vector<Panel>& panels)
 		{ "Shadow", _rendererContext->GetShadowProperties()->GetBridge() } // Node
 	}));
 
-	panels.push_back(Panel("Scene", {
-		{ "Lighting", _scene->GetBridge() } // Node
-	}));
+	//panels.push_back(Panel("Scene", {
+	//	{ "Lighting", _scene->GetBridge() } // Node
+	//}));
 }
 
 }

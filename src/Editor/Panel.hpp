@@ -12,7 +12,7 @@ namespace oryon {
 	class Panel
 	{
 	public:
-		Panel(const std::string& label, const std::vector<Node>& nodes);
+		Panel(const std::string& label = "", const std::vector<Node>& nodes = {});
 		~Panel() = default;
 
 		void render();

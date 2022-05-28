@@ -14,6 +14,7 @@
 #include "GLRenderer/Scene/Component.hpp"
 #include "GLRenderer/Framebuffer.hpp"
 #include "GLRenderer/Renderer/RendererContext.hpp"
+#include "GLRenderer/ParticleSystem.hpp"
 
 #include <string>
 #include <iostream>
@@ -70,7 +71,8 @@ void Editor::Initialize(GLFWwindow* window,
     // Scene
     SC_ImportModel = std::bind<bool>(&glrenderer::Scene::ImportModel, scene, std::placeholders::_1, std::placeholders::_2);
     SC_RenameEntity = std::bind<void>(&glrenderer::Scene::RenameEntity, scene, std::placeholders::_1, std::placeholders::_2);
-    SC_CreateEntity = std::bind<void>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
+    SC_CreateEntity = std::bind<glrenderer::Entity>(&glrenderer::Scene::CreateBaseEntity, scene, std::placeholders::_1);
+    SC_UpdateLight = std::bind<void>(&glrenderer::Scene::UpdateLights, scene, std::placeholders::_1);
 
     // RendererContext
     RC_ResizeRenderBuffer = std::bind<void>(&glrenderer::RendererContext::Resize, rendererContext, std::placeholders::_1, std::placeholders::_2);
@@ -112,7 +114,8 @@ void Editor::OnUpdate(std::shared_ptr<glrenderer::Scene>& scene)
     renderWorldOutliner(scene);
     renderMenuBar();
     renderPerformancePanel();
-    
+    renderParticuleSystemPanel(scene);
+  
     ImGui::End();
 }
 
@@ -146,18 +149,30 @@ void Editor::renderMenuBar()
             if (ImGui::BeginMenu("Mesh"))
             {
                 if (ImGui::MenuItem("Plan"))
-                    SC_CreateEntity(EBaseEntityType::Plan);
+                {
+                    _entitySelected = SC_CreateEntity(EBaseEntityType::Plan);
+                    onEntitySelectedChanged();
+                }
                 if (ImGui::MenuItem("Cube"))
-                    SC_CreateEntity(EBaseEntityType::Cube);
+                {
+                    _entitySelected = SC_CreateEntity(EBaseEntityType::Cube);
+                    onEntitySelectedChanged();
+                }
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Light"))
             {
                 if (ImGui::MenuItem("Point"))
-                    SC_CreateEntity(EBaseEntityType::PointLight);
+                {
+                    _entitySelected = SC_CreateEntity(EBaseEntityType::PointLight);
+                    onEntitySelectedChanged();
+                }
                 if (ImGui::MenuItem("Directional"))
-                    SC_CreateEntity(EBaseEntityType::DirectionalLight);
+                {
+                    _entitySelected = SC_CreateEntity(EBaseEntityType::DirectionalLight);
+                    onEntitySelectedChanged();
+                }
                 ImGui::EndMenu();
             }
 
@@ -168,6 +183,47 @@ void Editor::renderMenuBar()
 }
 
 
+void Editor::renderParticuleSystemPanel(std::shared_ptr<glrenderer::Scene>& scene)
+{
+    if (ImGui::Begin("Particule System"))
+    {
+        if (ImGui::Button("Add"))
+        {
+            scene->AddParticuleSystem();
+        }
+
+        if (_particuleSystemSelectedID >= 0)
+        {
+            if (ImGui::Button("Remove"))
+            {
+                scene->RemoveParticuleSystemAtIndex(_particuleSystemSelectedID);
+                _particuleSystemSelectedID = -1;
+            }
+        }
+
+        ImGui::Separator();
+
+        // List Selection
+        int PSIndex = 0;
+        for (const auto& particleSystem : scene->GetParticuleSystems())
+        {
+            if (ImGui::Selectable(particleSystem->GetName().c_str(), _particuleSystemSelectedID == PSIndex))
+            {
+                _particuleSystemSelectedID = PSIndex;
+                _particuleSystemPanel = Panel("Particule System", { { particleSystem->GetName(), particleSystem->GetBridge() } });
+            }
+            ++PSIndex;
+        }
+
+        // Selected Particule System Panel
+        if (_particuleSystemSelectedID >= 0)
+        {
+            _particuleSystemPanel.render();
+        }
+        
+    }
+    ImGui::End();
+}
 
 
 void Editor::renderWorldOutliner(std::shared_ptr<glrenderer::Scene>& scene)
@@ -178,7 +234,7 @@ void Editor::renderWorldOutliner(std::shared_ptr<glrenderer::Scene>& scene)
         {
             const auto& component = entity.getComponent<glrenderer::LabelComponent>();
             const std::string& label = component.label;
-            const uint32_t& groupId = component.groupId;
+            //const uint32_t& groupId = component.groupId;
 
             if (ImGui::Selectable((std::string(ICON_MDI_CUBE) + label).c_str(), _entitySelected == entity))
             {
@@ -255,26 +311,34 @@ void Editor::renderMaterialPanel()
 
 void Editor::renderLightPanel()
 {
-    if (!_entitySelected || !_entitySelected.hasComponent<glrenderer::LightComponent>())
+    if (!_pointLightSelected)
         return;
 
     if (ImGui::Begin("Light"))
     {
-        auto light = _entitySelected.getComponent<glrenderer::LightComponent>().light;
-        ImGui::ColorEdit3("Color", &light->getColor()[0]);
+        if (ImGui::ColorEdit3("Color", &_pointLightSelected->getColor()[0]))
+        {
+            _pointLightSelected->UpdateDiffuse();
+            SC_UpdateLight({ _pointLightSelected });
+        }
 
-        ImGui::DragFloat("intensity", &light->getIntensity(), 0.1f, 0.0f, 10.0f);
+        if (ImGui::DragFloat("intensity", &_pointLightSelected->getIntensity(), 0.1f, 0.0f, 10.0f))
+        {
+            _pointLightSelected->UpdateIntensity();
+            SC_UpdateLight({ _pointLightSelected });
+        }
         
-        glrenderer::PointLight* pointLight = light->isPointLight();
+        glrenderer::PointLight* pointLight = _pointLightSelected->isPointLight();
         if (pointLight)
         {
             float radius = pointLight->getRadius();
             if (ImGui::DragFloat("radius", &radius, 0.1f, 7.0f, 600.0f))
             {
                 pointLight->setRadius(radius);
+                SC_UpdateLight({ _pointLightSelected });    
             }
-            ImGui::Text("Linear: %f", pointLight->getLinear());
-            ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
+            //ImGui::Text("Linear: %f", pointLight->getLinear());
+            //ImGui::Text("Quadratic: %f", pointLight->getQuadratic());
         }
 
         //if (_scene->getDirectionalLight() && light->isDirectionalLight())
@@ -380,6 +444,12 @@ void Editor::renderViewer3DPanel()
                 transformComponent.location = translation; 
                 transformComponent.rotation = rotation;
                 transformComponent.scale = scale; 
+
+                if (_pointLightSelected)
+                {
+                    _pointLightSelected->UpdateLocation(translation);
+                    SC_UpdateLight({ _pointLightSelected });
+                }
             }
         }
 
@@ -452,6 +522,16 @@ void Editor::setupDockspace()
 void Editor::onEntitySelectedChanged()
 {
     _bufferEntitySelectedName = _entitySelected.getComponent<glrenderer::LabelComponent>().label;
+
+    if (_entitySelected.hasComponent<LightComponent>())
+    {
+        auto light = _entitySelected.getComponent<LightComponent>();
+        _pointLightSelected = std::dynamic_pointer_cast<glrenderer::PointLight>(light.light);
+    }
+    else
+    {
+        _pointLightSelected = nullptr;
+    }
 }
 
 void Editor::OnEvent(Event& e)
