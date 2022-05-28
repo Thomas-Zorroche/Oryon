@@ -197,6 +197,7 @@ void Editor::renderParticuleSystemPanel(std::shared_ptr<glrenderer::Scene>& scen
 
         if (_particuleSystemSelectedID >= 0)
         {
+            ImGui::SameLine();
             if (ImGui::Button("Remove"))
             {
                 scene->RemoveParticuleSystemAtIndex(_particuleSystemSelectedID);
@@ -206,17 +207,26 @@ void Editor::renderParticuleSystemPanel(std::shared_ptr<glrenderer::Scene>& scen
 
         ImGui::Separator();
 
+        ImGui::Text("List:");
+
         // List Selection
         int PSIndex = 0;
         for (const auto& particleSystem : scene->GetParticuleSystems())
         {
             if (ImGui::Selectable(particleSystem->GetName().c_str(), _particuleSystemSelectedID == PSIndex))
             {
+                if (_particuleSystemSelectedID != PSIndex)
+                {
+                    scene->OnParticleSystemSelected(PSIndex);
+                }
+
                 _particuleSystemSelectedID = PSIndex;
                 _particuleSystemPanel = Panel("Particule System", { { particleSystem->GetName(), particleSystem->GetBridge() } });
             }
             ++PSIndex;
         }
+
+        ImGui::Separator();
 
         // Selected Particule System Panel
         if (_particuleSystemSelectedID >= 0)
@@ -468,7 +478,13 @@ void Editor::renderViewer3DPanel()
                     _pointLightSelected->UpdateLocation(translation);
                     SC_UpdateLight({ _pointLightSelected });
                 }
+
+                if (_entitySelected.hasComponent<glrenderer::CallbackComponent>())
+                {
+                    _entitySelected.getComponent<glrenderer::CallbackComponent>().OnTransformCallback();
+                }
             }
+
         }
 
     }
