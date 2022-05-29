@@ -23,6 +23,11 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
+// native file dialog
+#include "nfd/nfd.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 // TEMP
 #include "GLRenderer/Lighting/PointLight.hpp"
 #include "GLRenderer/Lighting/DirectionalLight.hpp"
@@ -141,10 +146,25 @@ void Editor::renderMenuBar()
             {
                 if (ImGui::MenuItem("glTF"))
                 {
+                    nfdchar_t* outPath = NULL;
+                    nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
+
+                    if (result == NFD_OKAY) {
+                        SC_ImportModel(std::string(outPath), _groupLabels.size() - 1);
+                        free(outPath);
+                    }
+                    else {
+                        printf("NFD Error: %s\n", NFD_GetError());
+                    }
+                }
+
+                if (ImGui::MenuItem("Sponza"))
+                {
                     static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
                     _groupLabels.push_back("Sponza");
                     SC_ImportModel(modelPath, _groupLabels.size() - 1);
                 }
+            
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();

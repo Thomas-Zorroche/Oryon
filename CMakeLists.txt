@@ -44,7 +44,7 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-  set(LIBS glfw3 opengl32 GLAD)
+  set(LIBS glfw3 nfd opengl32 GLAD)
 elseif(UNIX AND NOT APPLE)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
   find_package(OpenGL REQUIRED)
