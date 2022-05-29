@@ -30,8 +30,6 @@ struct DirectionalLight
     float nearPlane;
 };
 
-// Constants
-#define POINT_LIGHTS_COUNT 200
 
 // Vertex Shader Inputs
 in vec3 vNormal;  
@@ -42,17 +40,17 @@ in vec2 vTexCoords;
 // Uniforms
 uniform float uShininess;
 uniform vec3 uCameraPos;
-//uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform DirectionalLight directionalLight;
 uniform sampler2D uBaseColorTexture;
 uniform vec4 uBaseColorFactor;
-uniform int uNumPointLights;
 
 #define MAX_NUM_TOTAL_LIGHTS 200
 layout (std140) uniform Lights
 {
     PointLight uPointLights[MAX_NUM_TOTAL_LIGHTS];
 };
+uniform int uNumPointLights;
+
 
 vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow, vec3 materialColor);
 vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow, vec3 materialColor);

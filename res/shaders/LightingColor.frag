@@ -4,16 +4,16 @@ out vec4 fFragColor;
 
 struct PointLight 
 {
-    float intensity;
     vec3 position;  
+    float intensity;
   
     vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-	
-    float constant;
     float linear;
+
+    vec3 diffuse;
     float quadratic;
+
+    vec4 specular;
 };
 
 struct DirectionalLight 
@@ -30,8 +30,12 @@ struct DirectionalLight
     float nearPlane;
 };
 
-// Constants
-#define POINT_LIGHTS_COUNT 8
+#define MAX_NUM_TOTAL_LIGHTS 200
+layout (std140) uniform Lights
+{
+    PointLight uPointLights[MAX_NUM_TOTAL_LIGHTS];
+};
+uniform int uNumPointLights;
 
 // Vertex Shader Inputs
 in vec3 vNormal;  
@@ -42,7 +46,6 @@ in vec4 vFragPosLightSpace;
 uniform vec3 uColor;
 uniform float uShininess;
 uniform vec3 uCameraPos;
-uniform PointLight pointLights[POINT_LIGHTS_COUNT];
 uniform DirectionalLight directionalLight;
 uniform sampler2D shadowMap;
 uniform int uSoftShadows; 
@@ -51,36 +54,14 @@ uniform int uPCFFilteringSamples;
 uniform sampler1D uBlockerSearchDist;
 uniform sampler1D uPCFFilteringDist;
 
-vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow);
 vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow);
 float ComputeShadow(vec4 fragPosLightSpace, vec3 normal);
 
-void main()
-{
-    vec3 color = vec3(0.0);
-
-    vec3 normal = vNormal;
-    vec3 viewDir = normalize(uCameraPos - vFragPos);
-
-    float shadow = ComputeShadow(vFragPosLightSpace, normal);
-
-    for (int i = 0; i < POINT_LIGHTS_COUNT; i++)
-    {
-        color += ComputePointLight(pointLights[i], normal, vFragPos, viewDir, shadow);
-    }
-
-    color += ComputeDirectionalLight(directionalLight, normal, viewDir, shadow);
-
-    fFragColor = vec4(color, 1.0);
-}
-
-
-vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow)
+vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, float shadow, vec3 materialColor)
 {
     // TEMP
-    vec3 materialAmbient = uColor;
-    vec3 materialDiffuse = uColor;
     vec3 materialSpecular = vec3(0.5);
+    vec3 materialAmbient = materialColor * 0.1;
     // END TEMP
 
     vec3 lightDirection = normalize(light.position - fragPos);
@@ -95,11 +76,34 @@ vec3 ComputePointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir
     float attenuation = 1.0 / (1.0 + light.linear * distance + light.quadratic * (distance * distance));  
     
     vec3 ambient = light.ambient * materialAmbient * attenuation * light.intensity;
-    vec3 diffuse = light.diffuse * materialDiffuse * diffuseStrength * attenuation * light.intensity;
-    vec3 specular = light.specular * materialSpecular * specularStrength * attenuation * light.intensity;
+    vec3 diffuse = light.diffuse * materialColor * diffuseStrength * attenuation * light.intensity;
+    vec3 specular = light.specular.rgb * materialSpecular * specularStrength * attenuation * light.intensity;
 
     return vec3(ambient + diffuse + specular);
 }
+
+void main()
+{
+    vec3 fColor = vec3(0, 0, 0);
+
+    vec3 normal = vNormal;
+    vec3 viewDir = normalize(uCameraPos - vFragPos);
+
+    //float shadow = ComputeShadow(vFragPosLightSpace, normal);
+    float shadow = 0.0;
+    //fColor += ComputeDirectionalLight(directionalLight, normal, viewDir, shadow);
+    for (int i = 0; i < MAX_NUM_TOTAL_LIGHTS; i++)
+    {
+        if (i == uNumPointLights)
+            break;
+
+        fColor += ComputePointLight(uPointLights[i], normal, vFragPos, viewDir, shadow, uColor);
+    }
+
+
+    fFragColor = vec4(fColor, 1.0);
+}
+
 
 vec3 ComputeDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir, float shadow)
 {

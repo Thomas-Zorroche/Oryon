@@ -23,19 +23,10 @@ void Application::Run()
 
 	_rendererContext->SetEvents(_scene);
 
+	_scene->CreateDefaultScene();
 
 	Input::setWindow(_window->GetNativeWindow());
 	_editor->Initialize(_window->GetNativeWindow(), _rendererContext, _scene, _camera);
-
-	//static const std::string modelPath = "C:/dev/gltf-models/Sponza/Sponza.gltf";
-	//_scene->ImportModel(modelPath);
-	//_scene->CreateBaseEntity(glrenderer::EBaseEntityType::PointLight);
-
-	// Default Cube
-	//auto cube = _scene->createEntity("Cube");
-	//cube.addComponent<glrenderer::MeshComponent>(glrenderer::Mesh::createMesh(glrenderer::MeshShape::Cube));
-	//auto& transformCube = cube.getComponent<glrenderer::TransformComponent>();
-	//transformCube.location.y += 2.0f;
 
 	CreateEditorPanels(_editor->GetPanels());
 
