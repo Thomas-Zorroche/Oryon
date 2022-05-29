@@ -519,6 +519,14 @@ void Editor::renderPerformancePanel()
     if (ImGui::Begin("Performance"))
     {
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+
+        ImGui::Separator();
+        ImGui::Checkbox("Profile", &_profiling);
+
+        if (_profiling)
+        {
+            ImGui::Text("Time: %.1f ms", _averageTime);
+        }
     }
     ImGui::End();
 }

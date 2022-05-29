@@ -47,6 +47,9 @@ public:
 
 	const glrenderer::Entity& GetEntitySelected() const { return _entitySelected; }
 
+	void SetAverageTime(float time) { _averageTime = time; }
+	bool IsProfiling() { return _profiling; }
+
 public:
 // Events
 	// TODO remove all events and save scene shared ptr
@@ -112,7 +115,10 @@ private:
 
 	bool _canDuplicate = true;
 
-	std::shared_ptr<class glrenderer::Scene> _scene = nullptr	;
+	std::shared_ptr<class glrenderer::Scene> _scene = nullptr;
+
+	float _averageTime = 0.0f;
+	bool _profiling = false;
 };
 
 }

@@ -32,6 +32,9 @@ namespace oryon
         /* Make the window's context current */
         glfwMakeContextCurrent(_glfw_Window);
 
+        /* Disable VSync */
+        glfwSwapInterval(0);
+
         /* Initialize glad: load all OpenGL function pointers */
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         {

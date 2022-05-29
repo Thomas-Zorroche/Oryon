@@ -32,8 +32,16 @@ void Application::Run()
 
 	float deltaTime = 0.0f;	// Time between current frame and last frame
 	float lastFrame = 0.0f; // Time of last frame
+	long int frame = 0;
+	std::chrono::steady_clock::time_point begin;
+	std::chrono::steady_clock::time_point end;
 	while (!glfwWindowShouldClose(_window->GetNativeWindow()))
 	{
+		if (_editor->IsProfiling())
+		{
+			begin = std::chrono::high_resolution_clock::now();
+		}
+
 		float currentFrame = static_cast<float>(glfwGetTime());
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
@@ -49,6 +57,25 @@ void Application::Run()
 		
 		/* Poll for and process events */
 		glfwPollEvents();
+
+		if (_editor->IsProfiling())
+		{
+			end = std::chrono::high_resolution_clock::now();
+			auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+			_elpasedTimes.push_back(elapsed);
+
+			++frame;
+			if (frame % 100 == 0)
+			{
+				float average = 0.0f;
+				for (const auto time : _elpasedTimes)
+					average += time.count();
+				
+				average /= _elpasedTimes.size();
+				_editor->SetAverageTime(average);
+				_elpasedTimes.clear();
+			}
+		}
 	}
 
 	_editor->Free();
