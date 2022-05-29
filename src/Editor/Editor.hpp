@@ -49,6 +49,7 @@ public:
 
 public:
 // Events
+	// TODO remove all events and save scene shared ptr
 	// Scene
 	using ImportModelCallback = std::function<bool(const std::string&, const uint32_t&)>;
 	using RenameEntityCallback = std::function<void(glrenderer::Entity&, const std::string&)>;
@@ -110,6 +111,8 @@ private:
 	std::vector<std::string> _groupLabels = { "default" };
 
 	bool _canDuplicate = true;
+
+	std::shared_ptr<class glrenderer::Scene> _scene = nullptr	;
 };
 
 }

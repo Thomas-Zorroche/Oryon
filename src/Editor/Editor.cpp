@@ -15,6 +15,7 @@
 #include "GLRenderer/Framebuffer.hpp"
 #include "GLRenderer/Renderer/RendererContext.hpp"
 #include "GLRenderer/ParticleSystem.hpp"
+#include "GLRenderer/Scene/Scene.hpp"
 
 #include <string>
 #include <iostream>
@@ -43,6 +44,8 @@ void Editor::Initialize(GLFWwindow* window,
     const std::shared_ptr<class glrenderer::Scene>& scene,
     const std::shared_ptr<class glrenderer::Camera>& camera)
 {
+    _scene = scene;
+
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -217,11 +220,11 @@ void Editor::renderParticuleSystemPanel(std::shared_ptr<glrenderer::Scene>& scen
             {
                 if (_particuleSystemSelectedID != PSIndex)
                 {
-                    scene->OnParticleSystemSelected(PSIndex);
+                    _entitySelected = particleSystem->GetEmitter();
+                    onEntitySelectedChanged();
                 }
 
                 _particuleSystemSelectedID = PSIndex;
-                _particuleSystemPanel = Panel("Particule System", { { particleSystem->GetName(), particleSystem->GetBridge() } });
             }
             ++PSIndex;
         }
@@ -560,10 +563,23 @@ void Editor::onEntitySelectedChanged()
     if (_entitySelected.hasComponent<LightComponent>())
     {
         auto light = _entitySelected.getComponent<LightComponent>();
-        _pointLightSelected = std::dynamic_pointer_cast<glrenderer::PointLight>(light.light);
+        _pointLightSelected = std::dynamic_pointer_cast<PointLight>(light.light);
+
+        _particuleSystemSelectedID = -1;
+    }
+    else if (_entitySelected.hasComponent<ParticleSystemComponent>())
+    {
+        _particuleSystemSelectedID = _entitySelected.getComponent<ParticleSystemComponent>().index;
+        _scene->OnParticleSystemSelected(_particuleSystemSelectedID);
+
+        const auto& ps = _scene->GetParticuleSystems()[_particuleSystemSelectedID];
+        _particuleSystemPanel = Panel("Particule System", { { ps->GetName(), ps->GetBridge() } });
+        
+        _pointLightSelected = nullptr;
     }
     else
     {
+        _particuleSystemSelectedID = -1;
         _pointLightSelected = nullptr;
     }
 }
